@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from src.config import YES_NO_FIELDS
-from src.master_reference import PATTERN_OF_COLLISION, TYPE_OF_COLLISION, TYPE_OF_VEHICLE
+from src.master_reference import load_master_reference
 
 
 SEVERITY_MAP = {"F": "Fatal", "M": "Minor", "G": "Grievous"}
@@ -65,11 +65,12 @@ def clean_data(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         df["hour"], bins=[-0.1, 6, 12, 18, 24], labels=["0-6", "6-12", "12-18", "18-24"], right=False
     )
 
+    refs = load_master_reference()
     for src, dst, mapping in [
-        ("PATTERN OF COLLISION", "PATTERN_OF_COLLISION", PATTERN_OF_COLLISION),
-        ("TYPE OF COLLISION", "TYPE_OF_COLLISION", TYPE_OF_COLLISION),
-        ("TYPE OF VEHICLE-1", "TYPE_OF_VEHICLE_1", TYPE_OF_VEHICLE),
-        ("TYPE OF VEHICLE-2", "TYPE_OF_VEHICLE_2", TYPE_OF_VEHICLE),
+        ("PATTERN OF COLLISION", "PATTERN_OF_COLLISION", refs["Pattern of Collision"]),
+        ("TYPE OF COLLISION", "TYPE_OF_COLLISION", refs["Type of Collision"]),
+        ("TYPE OF VEHICLE-1", "TYPE_OF_VEHICLE_1", refs["Type of Vehicle"]),
+        ("TYPE OF VEHICLE-2", "TYPE_OF_VEHICLE_2", refs["Type of Vehicle"]),
     ]:
         df[f"{dst}_CODE"], df[f"{dst}_LABEL"], df[f"{dst}_UNKNOWN"] = _decode_code(df[src], mapping)
 

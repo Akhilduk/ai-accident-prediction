@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from src.config import DATA_DIR
+
 PATTERN_OF_COLLISION = {
     1: "Single Vehicle",
     2: "Vehicle to Vehicle",
@@ -40,8 +47,44 @@ TYPE_OF_VEHICLE = {
     14: "Others (Specify)",
 }
 
-MASTER_REF_TABLES = {
+DEFAULT_MASTER_REF_TABLES = {
     "Pattern of Collision": PATTERN_OF_COLLISION,
     "Type of Collision": TYPE_OF_COLLISION,
     "Type of Vehicle": TYPE_OF_VEHICLE,
 }
+
+MASTER_REFERENCE_FILE = DATA_DIR / "master_reference.json"
+
+
+def _normalize_table(mapping: dict) -> dict[int, str]:
+    out = {}
+    for k, v in mapping.items():
+        try:
+            key = int(k)
+            val = str(v).strip()
+            if val:
+                out[key] = val
+        except Exception:
+            continue
+    return dict(sorted(out.items(), key=lambda x: x[0]))
+
+
+def load_master_reference() -> dict[str, dict[int, str]]:
+    if MASTER_REFERENCE_FILE.exists():
+        payload = json.loads(MASTER_REFERENCE_FILE.read_text())
+        loaded = {
+            "Pattern of Collision": _normalize_table(payload.get("Pattern of Collision", {})),
+            "Type of Collision": _normalize_table(payload.get("Type of Collision", {})),
+            "Type of Vehicle": _normalize_table(payload.get("Type of Vehicle", {})),
+        }
+        for key, default in DEFAULT_MASTER_REF_TABLES.items():
+            if not loaded[key]:
+                loaded[key] = default.copy()
+        return loaded
+    return {k: v.copy() for k, v in DEFAULT_MASTER_REF_TABLES.items()}
+
+
+def save_master_reference(master_tables: dict[str, dict[int, str]]) -> None:
+    MASTER_REFERENCE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    clean_payload = {name: _normalize_table(mapping) for name, mapping in master_tables.items()}
+    MASTER_REFERENCE_FILE.write_text(json.dumps(clean_payload, indent=2))

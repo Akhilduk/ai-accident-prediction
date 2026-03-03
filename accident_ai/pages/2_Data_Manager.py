@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pandas as pd
 import streamlit as st
 
@@ -13,7 +11,7 @@ from src.data_io import (
     set_active_dataset,
     validate_columns,
 )
-from src.master_reference import MASTER_REF_TABLES
+from src.master_reference import DEFAULT_MASTER_REF_TABLES, load_master_reference, save_master_reference
 
 st.title("Data Upload & Manager")
 
@@ -46,8 +44,38 @@ if active:
         st.caption(f"Footer/legend rows removed: {info['removed_footer_rows']}")
         st.dataframe(cleaned.head(20), use_container_width=True)
 
-st.subheader("Master Reference Tables")
-for title, mapping in MASTER_REF_TABLES.items():
+st.subheader("Master Reference Tables (Editable)")
+st.caption("You can add/edit/delete codes and labels below. Changes are saved locally and used in decoding.")
+
+refs = load_master_reference()
+edited_refs = {}
+for title in ["Pattern of Collision", "Type of Collision", "Type of Vehicle"]:
     with st.expander(title, expanded=False):
-        ref_df = pd.DataFrame({"Code": list(mapping.keys()), "Label": list(mapping.values())})
-        st.dataframe(ref_df, use_container_width=True)
+        base_df = pd.DataFrame({"Code": list(refs[title].keys()), "Label": list(refs[title].values())})
+        if base_df.empty:
+            base_df = pd.DataFrame({"Code": [None], "Label": [""]})
+        edited = st.data_editor(
+            base_df,
+            num_rows="dynamic",
+            use_container_width=True,
+            key=f"editor_{title}",
+            column_config={
+                "Code": st.column_config.NumberColumn("Code", step=1, format="%d"),
+                "Label": st.column_config.TextColumn("Label"),
+            },
+        )
+        cleaned_editor = edited.dropna(subset=["Code", "Label"]).copy()
+        cleaned_editor["Code"] = cleaned_editor["Code"].astype(int)
+        cleaned_editor["Label"] = cleaned_editor["Label"].astype(str).str.strip()
+        cleaned_editor = cleaned_editor[cleaned_editor["Label"] != ""]
+        edited_refs[title] = dict(zip(cleaned_editor["Code"], cleaned_editor["Label"]))
+
+c1, c2 = st.columns(2)
+with c1:
+    if st.button("Save Master Reference Changes", type="primary"):
+        save_master_reference(edited_refs)
+        st.success("Master reference updated successfully.")
+with c2:
+    if st.button("Reset Master Reference to Default"):
+        save_master_reference(DEFAULT_MASTER_REF_TABLES)
+        st.success("Master reference reset to default values.")

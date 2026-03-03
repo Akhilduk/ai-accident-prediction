@@ -6,6 +6,7 @@ Python-only Streamlit app for end-to-end accident analytics, ML severity predict
 - Excel upload + local version management (`data/uploads/`)
 - Data cleaning with NATRAC-specific normalization and legend/footer row removal
 - Master-reference decoding for collision and vehicle codes
+- UI-based master reference manager (add/edit/delete codes) persisted locally
 - Interactive analytics dashboard with filters, map, charts, and hotspot table
 - 3-model severity classification benchmark:
   - RandomForestClassifier
@@ -61,3 +62,4 @@ If missing, upload via **Data Upload & Manager** page.
 - Active cleaned file: `data/processed/active_cleaned.csv`
 - Best model: `models/best_model.joblib`
 - Reports: `reports/`
+- Editable master reference store: `data/master_reference.json`
