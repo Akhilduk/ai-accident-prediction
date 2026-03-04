@@ -36,6 +36,36 @@ with st.expander("How to Use This Page (Simple)", expanded=True):
 """
     )
 
+
+
+with st.expander("Column Meaning and Cleaning Rules (Non-Technical)", expanded=False):
+    st.markdown(
+        """
+### What important columns mean
+- **FIR NO**: complaint/reference number of a reported case.
+- **Date / Time / Day**: when accident happened.
+- **D/N**: Day (`D`) or Night (`N`).
+- **PATTERN / TYPE OF COLLISION**: how vehicles collided and collision class.
+- **TYPE OF VEHICLE-1 / 2**: vehicle categories of involved parties.
+- **GEOMETRY**: road shape/type (straight, curve, etc.).
+- **PRESENCE OF MEDIAN / SHOULDER / FOOTPATH**: road infrastructure available (`yes/no`).
+- **JN/NOT**: junction or non-junction area.
+- **SEVERITY**: accident seriousness code.
+
+### How cleaning is done
+1. Header names are standardized (small naming differences are normalized).
+2. Mixed date formats are parsed (including Excel serial dates).
+3. Month and day names are normalized.
+4. Time text is converted into hour/minute and a time bucket.
+5. Code columns are decoded using master reference tables.
+6. Missing numeric values are filled with median; missing text values with most common label.
+7. Severity code is converted to user-friendly class: Fatal / Grievous / Minor.
+
+### Why master reference matters
+If your codebook says `3 = Rear End`, the app must know that mapping. This page is where you define/fix those mappings.
+"""
+    )
+
 uploaded = st.file_uploader("Upload accident Excel file", type=["xlsx", "xls"])
 if uploaded is not None:
     saved = save_uploaded_file(uploaded)

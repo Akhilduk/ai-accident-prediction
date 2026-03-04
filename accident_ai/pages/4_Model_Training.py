@@ -84,6 +84,30 @@ with st.expander("Technical Words in Simple Language", expanded=False):
 """
     )
 
+
+
+with st.expander("How training calculations are done (simple + technical)", expanded=False):
+    st.markdown(
+        """
+### Training flow
+1. Data is split into **80% training** and **20% test** using class-balanced split.
+2. Numeric fields are median-imputed; text fields are most-frequent-imputed + one-hot encoded.
+3. Three models are trained (RandomForest, XGBoost if available, CatBoost if available).
+4. 5-fold cross-validation computes stability score (Macro-F1).
+5. Final comparison uses test-set metrics and best Macro-F1 model is auto-saved.
+
+### Score formulas in plain words
+- **Accuracy** = correct predictions / all predictions.
+- **Macro-F1** = average F1 across classes with equal weight to each class.
+- **Macro-Recall** = average class-wise recall (how many real cases were captured).
+
+### Confusion matrix axes
+- **X-axis (columns)**: predicted class by model.
+- **Y-axis (rows)**: actual real class from data.
+- Diagonal cells = correct predictions; off-diagonal = misclassification.
+"""
+    )
+
 if st.button("Train All 3 Models", type="primary"):
     with st.spinner("Training in progress..."):
         leaderboard, report, best = train_and_compare(df, feature_cols)

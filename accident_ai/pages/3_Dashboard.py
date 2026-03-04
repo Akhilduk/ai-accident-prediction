@@ -38,6 +38,50 @@ with st.expander("How to Use This Dashboard (Simple)", expanded=False):
 """
     )
 
+
+
+with st.expander("How to read X-axis, Y-axis, matrix, and severity logic", expanded=False):
+    st.markdown(
+        """
+### Chart axis meaning (general rule)
+- **X-axis** usually shows category or time (month, place, collision type, etc.).
+- **Y-axis** usually shows count, rate, or correlation value.
+- In map charts: latitude/longitude are location coordinates; color/size show severity or risk level.
+
+### Correlation matrix: how it is formed
+1. User selects factors from sidebar.
+2. Non-numeric factors (example: road geometry) are converted to internal category codes so math can compare patterns.
+3. Extra severity flags are created:
+   - `severity_fatal` = 1 if Fatal else 0
+   - `severity_grievous` = 1 if Serious Injury else 0
+   - `severity_minor` = 1 if Minor else 0
+   - `severity_high` = 1 if Fatal or Serious Injury else 0
+4. Matrix values are computed using selected method:
+   - **Pearson** for linear relationship
+   - **Spearman** for rank-based relationship
+
+### What matrix values represent
+- **+1**: very strong same-direction relation.
+- **0**: almost no relation.
+- **-1**: very strong opposite-direction relation.
+- Higher absolute value (`|value|`) means stronger relationship strength.
+
+### How factors are identified as important
+- The app sorts factors by absolute correlation with selected severity target.
+- Then it labels impact level:
+  - **High** if `|correlation| >= 0.35`
+  - **Medium** if `|correlation| >= 0.20`
+  - **Low** otherwise
+- Positive sign means risk increases with that factor pattern; negative sign means risk decreases.
+
+### Severity “reason” table (simple risk logic)
+For each factor group, it calculates:
+- **Target Rate** = `target_cases / total_records`
+- **Risk Score** = `target_rate × sqrt(total_records)`
+This balances both percentage and sample size, so very tiny groups do not dominate unfairly.
+"""
+    )
+
 place_options = sorted(df[place_col].astype(str).unique().tolist())
 month_options = sorted(df["month_num"].astype(int).unique().tolist())
 year_options = sorted(df["year"].astype(int).unique().tolist())
