@@ -336,3 +336,90 @@ with t4:
             use_container_width=True,
             hide_index=True,
         )
+
+    st.markdown("---")
+    st.markdown("#### Why Is This Severity High? (Visual Cause Analysis)")
+    target_mode = st.selectbox(
+        "Analyze causes for",
+        ["High Severity (Fatal + Grievous)", "Fatal", "Grievous", "Minor"],
+    )
+    min_samples = st.slider("Ignore very small groups (minimum records)", min_value=5, max_value=100, value=20, step=5)
+
+    factor_columns = [
+        "day_night_label",
+        "time_bucket",
+        "day_of_week",
+        "GEOMETRY",
+        "JN/NOT",
+        "PRESENCE OF MEDIAN",
+        "PRESENCE OF SHOULDER",
+        "PRESENCE OF FOOTPATH",
+        "PATTERN_OF_COLLISION_LABEL",
+        "TYPE_OF_COLLISION_LABEL",
+        "TYPE_OF_VEHICLE_1_LABEL",
+        "TYPE_OF_VEHICLE_2_LABEL",
+    ]
+    selected_factor_columns = st.multiselect(
+        "Factors to analyze",
+        factor_columns,
+        default=["day_night_label", "GEOMETRY", "JN/NOT", "time_bucket", "TYPE_OF_COLLISION_LABEL"],
+    )
+
+    if target_mode == "High Severity (Fatal + Grievous)":
+        target_flag = f["severity_target"].isin(["Fatal", "Grievous"])
+        target_name = "High Severity"
+    else:
+        target_flag = f["severity_target"].eq(target_mode)
+        target_name = target_mode
+
+    if not selected_factor_columns:
+        st.info("Select at least one factor to run visual cause analysis.")
+    else:
+        all_driver_rows = []
+        for col in selected_factor_columns:
+            g = (
+                f.assign(_target=target_flag.astype(int))
+                .groupby(col, dropna=False)
+                .agg(total_records=("_target", "size"), target_cases=("_target", "sum"))
+                .reset_index()
+            )
+            g = g[g["total_records"] >= min_samples].copy()
+            if g.empty:
+                continue
+            g["target_rate"] = (g["target_cases"] / g["total_records"]).round(4)
+            g["risk_score"] = g["target_rate"] * (g["total_records"] ** 0.5)
+            g["factor"] = col
+            g = g.sort_values("target_rate", ascending=False)
+            g = g.rename(columns={col: "factor_value"})
+            all_driver_rows.append(g)
+
+            fig = px.bar(
+                g.head(12),
+                x="factor_value",
+                y="target_rate",
+                color="target_rate",
+                title=f"{friendly_factor_names.get(col, col)} vs {target_name} Rate",
+                hover_data=["total_records", "target_cases", "risk_score"],
+            )
+            fig.update_yaxes(title=f"{target_name} Rate")
+            st.plotly_chart(style_plotly(fig), use_container_width=True)
+
+        if not all_driver_rows:
+            st.warning("No factor groups matched the current minimum sample threshold. Reduce threshold or adjust filters.")
+        else:
+            drivers = pd.concat(all_driver_rows, ignore_index=True)
+            top_drivers = drivers.sort_values(["risk_score", "target_rate"], ascending=False).head(12).copy()
+            top_drivers["factor"] = top_drivers["factor"].map(lambda x: friendly_factor_names.get(x, x))
+            top_drivers["severity_target"] = target_name
+            st.markdown("**Top Likely Drivers (Layman View)**")
+            st.caption(
+                "Higher rate means that factor group has more selected severity cases. "
+                "Risk score balances rate and sample size to avoid tiny-group bias."
+            )
+            st.dataframe(
+                top_drivers[
+                    ["severity_target", "factor", "factor_value", "target_rate", "total_records", "target_cases", "risk_score"]
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
