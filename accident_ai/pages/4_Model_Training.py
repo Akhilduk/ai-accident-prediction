@@ -84,6 +84,48 @@ with st.expander("Technical Words in Simple Language", expanded=False):
 """
     )
 
+
+
+with st.expander("How training calculations are done (simple + technical)", expanded=False):
+    st.markdown(
+        """
+### A) Exact training pipeline
+1. Records with valid severity are used.
+2. Data split: **80% train** and **20% test** with class balancing (`stratify=y`).
+3. Preprocessing:
+   - Numeric columns -> missing values replaced by **median**.
+   - Text columns -> missing values replaced by **most frequent value**, then one-hot encoded.
+4. Models trained: RandomForest, XGBoost (if installed), CatBoost (if installed).
+5. Cross-validation: 5 folds on training set using Macro-F1.
+6. Best model is selected by sorting leaderboard by `test_f1_macro`, then `cv_f1_macro_mean`.
+
+### B) Metric formulas with numbers
+- **Accuracy** = `correct / total`
+  - Example: 160 correct out of 200 => `0.80 (80%)`
+- **Precision (for one class)** = `TP / (TP + FP)`
+- **Recall (for one class)** = `TP / (TP + FN)`
+- **F1 (for one class)** = `2 * (precision * recall) / (precision + recall)`
+- **Macro-F1** = average of class-wise F1 values (all classes get equal importance).
+  - Example: Fatal F1=0.50, Serious F1=0.70, Minor F1=0.90 -> Macro-F1=`(0.50+0.70+0.90)/3=0.70`.
+
+### C) Confusion matrix: axis and cell meaning
+- **Rows (Y-axis)** = Actual class.
+- **Columns (X-axis)** = Predicted class.
+- Diagonal cell = correct prediction count.
+- Off-diagonal cell = model confusion/mistake count.
+
+Example row:
+- Actual Fatal -> Predicted [Fatal=18, Serious=7, Minor=1]
+- Means 18 correct Fatal detections, 8 Fatal cases misclassified.
+
+### D) How to read leaderboard table and bar chart
+- Each row = one algorithm.
+- `cv_f1_macro_mean` shows stability across folds.
+- `test_f1_macro` is final balanced quality on unseen test data.
+- Higher bar in "Model Comparison by Macro-F1" = better overall class-balanced model.
+"""
+    )
+
 if st.button("Train All 3 Models", type="primary"):
     with st.spinner("Training in progress..."):
         leaderboard, report, best = train_and_compare(df, feature_cols)

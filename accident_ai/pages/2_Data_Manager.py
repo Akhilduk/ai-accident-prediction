@@ -36,6 +36,46 @@ with st.expander("How to Use This Page (Simple)", expanded=True):
 """
     )
 
+
+
+with st.expander("Column Meaning and Cleaning Rules (Non-Technical)", expanded=False):
+    st.markdown(
+        """
+### What important columns mean
+- **FIR NO**: complaint/reference number of a reported case.
+- **Date / Time / Day**: when accident happened.
+- **D/N**: Day (`D`) or Night (`N`).
+- **PATTERN / TYPE OF COLLISION**: how vehicles collided and collision class.
+- **TYPE OF VEHICLE-1 / 2**: vehicle categories of involved parties.
+- **GEOMETRY**: road shape/type (straight, curve, etc.).
+- **PRESENCE OF MEDIAN / SHOULDER / FOOTPATH**: road infrastructure available (`yes/no`).
+- **JN/NOT**: junction or non-junction area.
+- **SEVERITY**: accident seriousness code (`F`, `G`, `M` etc.).
+
+### Data-cleaning steps with practical examples
+1. **Column normalization**: headers like `Type of Collision` and `TYPE OF COLLISION` are treated as same.
+2. **Date parsing**:
+   - Text formats like `16-03-2021`, `03/16/2021`, `2021-03-16` are parsed.
+   - Excel serial dates (example `45123`) are converted to real date.
+3. **Time parsing**:
+   - Values like `8.5` are interpreted as hour/minute style and converted.
+   - Time bucket created: `0-6`, `6-12`, `12-18`, `18-24`.
+4. **Code decoding**: numeric codes are converted into readable labels using master reference.
+5. **Missing values**:
+   - Numeric missing -> median fill.
+   - Text missing -> most frequent value fill.
+6. **Severity mapping**:
+   - `F -> Fatal`, `G -> Grievous (Serious Injury)`, `M -> Minor`.
+
+### Validation meaning
+- If required columns are missing, app stops with warning.
+- If valid, cleaned dataset is saved and used by Dashboard/Training/Prediction.
+
+### Why master reference matters
+If your source codebook says `3 = Rear End`, the app must know this mapping. Wrong mapping gives wrong analysis labels.
+"""
+    )
+
 uploaded = st.file_uploader("Upload accident Excel file", type=["xlsx", "xls"])
 if uploaded is not None:
     saved = save_uploaded_file(uploaded)

@@ -101,6 +101,64 @@ Choose one section:
 """
     )
 
+
+
+with st.expander("How prediction and forecast numbers are calculated", expanded=False):
+    st.markdown(
+        """
+### 1) Severity AI Prediction (single incident)
+- The selected form values are converted into one input row.
+- Model gives probability for each class.
+- Example output:
+  - Fatal = 0.18
+  - Serious Injury = 0.32
+  - Minor = 0.50
+- "Most likely outcome" is the largest probability (here: Minor, 50%).
+
+### 2) Area Risk Explorer calculations
+- App filters historical records based on your selected filters.
+- For each matching row, model predicts class probabilities.
+- Then averages probabilities across all matching rows.
+  - Example: If 3 rows Fatal probs are `[0.10, 0.20, 0.30]`, average Fatal probability = `0.20`.
+- **High Severity Risk** per row = `P(Fatal) + P(Serious Injury)`.
+- Jurisdiction risk table shows:
+  - **Average severe risk** = mean high-severity-risk for that place.
+  - **Samples** = number of matched rows from that place.
+
+### 3) Hotspot forecast method (5 years)
+- Historical monthly accident counts are built per jurisdiction.
+- Features created for each month:
+  - `lag_1`, `lag_2`, `lag_3` (previous month counts)
+  - `rolling_3` (3-month moving average)
+  - `trend_idx` (time progression)
+  - `month_sin`, `month_cos` (seasonality)
+- Gradient Boosting model predicts next month count, then rolls forward month-by-month up to 60 months.
+
+### 4) Exact date ranking formula
+- Start with monthly predicted count.
+- Convert to daily base:
+  - `daily_base = monthly_predicted_count / days_in_month`
+- Compute place weekday ratio from historical data:
+  - `weekday_ratio = weekday_count_for_place / total_count_for_place`
+- Compute weight against global weekday ratio and clip range [0.5, 1.8].
+- Final:
+  - `predicted_daily_risk = daily_base * weekday_weight`
+
+### 5) How to read prediction tables/charts
+- **Severity probability table/chart**:
+  - X-axis = severity class; Y-axis = probability (0 to 1).
+- **Top Jurisdictions by High Severity Risk**:
+  - Table sorted descending by average severe risk.
+  - Bar chart X-axis = jurisdiction, Y-axis = average severe risk.
+- **Hotspot ranking chart**:
+  - X-axis = jurisdiction/place.
+  - Y-axis = predicted monthly count or predicted daily risk (based on selected mode).
+- **Trend chart**:
+  - X-axis = month-year period.
+  - Y-axis = actual count (historical mode) or predicted count (forecast mode).
+"""
+    )
+
 if section == "Severity AI Prediction":
     model_bundle = load_best_model()
     if model_bundle is None:

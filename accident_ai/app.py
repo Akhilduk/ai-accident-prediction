@@ -33,3 +33,34 @@ with st.expander("Simple Guide (For First-Time Users)", expanded=False):
 - **Forecast**: Future estimate based on past data.
 """
     )
+
+with st.expander("Complete Non-Technical Glossary (Read Once)", expanded=False):
+    st.markdown(
+        """
+### Who should use this portal?
+- **Police / enforcement**: identify priority risky stretches.
+- **Road engineers**: see what road conditions are linked with severe outcomes.
+- **Policy teams**: prioritize interventions by data evidence.
+- **General public users**: understand what, where, and when accident risk is high.
+
+### What each page does in one line
+- **Data Manager**: upload + validate + clean + code mapping.
+- **Dashboard**: filtered visual analysis and factor relationships.
+- **Model Training**: compare algorithms and save best model.
+- **Prediction**: severity probabilities and future hotspot ranking.
+
+### Simple dictionary of technical words
+- **Feature/Factor**: an input field used for analysis (month, geometry, day/night, etc.).
+- **Target**: output to predict (severity class).
+- **Correlation**: relationship score between two fields from -1 to +1.
+- **Matrix**: table where both rows and columns are factors and cells contain relationship value.
+- **Forecast**: future estimate built from historical pattern.
+- **Probability**: chance of each possible outcome (0 to 1 or 0% to 100%).
+- **Model**: algorithm trained to learn past patterns.
+
+### Important warning for all pages
+- The app shows **data relationships** and **risk indications**.
+- It does **not** prove legal cause-and-effect by itself.
+- Always combine with field inspection, traffic counts, and local expert judgement.
+"""
+    )

@@ -38,6 +38,81 @@ with st.expander("How to Use This Dashboard (Simple)", expanded=False):
 """
     )
 
+
+
+with st.expander("How to read X-axis, Y-axis, matrix, and severity logic", expanded=False):
+    st.markdown(
+        """
+### 1) How to read every chart on this page
+- **Map (scatter map)**
+  - Latitude + Longitude place the point on map.
+  - Color shows severity category.
+  - Hover card shows FIR number, date, severity, and collision details.
+- **Month-wise Severity Trend (line/stacked chart)**
+  - **X-axis** = month number (`1` to `12`).
+  - **Y-axis** = number of accident records in that month.
+  - If one month bar/line is higher, that month had more accidents in selected filters.
+- **Severity Distribution chart**
+  - **X-axis** = severity class (Fatal / Serious Injury / Minor).
+  - **Y-axis** = count of accidents in each class.
+- **Collision Pattern / Collision Type bars**
+  - **X-axis** = pattern/type names.
+  - **Y-axis** = accident count.
+- **Vehicle-1 vs Vehicle-2 heatmap**
+  - **X-axis** = first vehicle type, **Y-axis** = second vehicle type.
+  - Cell color intensity = how often this pair appears.
+- **Junction vs Non-Junction grouped bar**
+  - **X-axis** = `JN/NOT` value.
+  - **Y-axis** = count.
+  - Color split = severity class.
+- **Top hotspot table**
+  - Sorted from highest accidents to lowest for current filters.
+  - First row is the highest-risk hotspot in this filtered view.
+
+### 2) Correlation matrix: exact method used
+1. You select factors from sidebar (**Factors to compare**).
+2. If factor is text (like `GEOMETRY`), app converts it into internal category code numbers.
+3. App creates extra severity indicator columns:
+   - `severity_fatal` = 1 when class is Fatal else 0.
+   - `severity_grievous` = 1 when class is Serious Injury else 0.
+   - `severity_minor` = 1 when class is Minor else 0.
+   - `severity_high` = 1 when class is Fatal or Serious Injury else 0.
+4. Correlation is computed between all selected columns:
+   - **Pearson**: straight-line relationship.
+   - **Spearman**: rank/order relationship.
+5. Matrix cell value is from **-1 to +1**.
+
+### 3) How to interpret correlation value with numerical examples
+- `+0.62` => medium/strong positive relation (as factor grows, selected severity flag tends to increase).
+- `-0.41` => medium negative relation (as factor grows, selected severity flag tends to decrease).
+- `+0.03` => very weak relation (almost no pattern).
+- **Important:** correlation is **association**, not proof of cause.
+
+### 4) How top factors are picked for severity
+- App takes selected severity target column (example: `severity_high`).
+- Sorts factors by absolute correlation `abs(correlation)` in descending order.
+- Impact level used in this page:
+  - **High** if `abs(correlation) >= 0.35`
+  - **Medium** if `abs(correlation) >= 0.20`
+  - **Low** otherwise
+- Direction:
+  - Positive => "Increases with target"
+  - Negative => "Decreases with target"
+
+### 5) "Why is severity high" section: formula used
+For each factor value/group:
+- **total_records** = number of records in that group
+- **target_cases** = number of selected severity cases in that group
+- **target_rate** = `target_cases / total_records`
+- **risk_score** = `target_rate * sqrt(total_records)`
+
+Example:
+- Group A: 25 severe out of 100 => `target_rate = 0.25`; `risk_score = 0.25 * 10 = 2.5`
+- Group B: 8 severe out of 16 => `target_rate = 0.50`; `risk_score = 0.50 * 4 = 2.0`
+Even though Group B has higher rate, Group A can rank higher because it has stronger sample support.
+"""
+    )
+
 place_options = sorted(df[place_col].astype(str).unique().tolist())
 month_options = sorted(df["month_num"].astype(int).unique().tolist())
 year_options = sorted(df["year"].astype(int).unique().tolist())
