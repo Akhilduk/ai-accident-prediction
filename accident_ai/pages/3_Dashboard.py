@@ -338,12 +338,12 @@ with t4:
         )
 
     st.markdown("---")
-    st.markdown("#### Why Is This Severity High? (Visual Cause Analysis)")
+    st.markdown("#### Why Is Severity High? (Simple Explanation)")
     target_mode = st.selectbox(
         "Analyze causes for",
         ["High Severity (Fatal + Grievous)", "Fatal", "Grievous", "Minor"],
     )
-    min_samples = st.slider("Ignore very small groups (minimum records)", min_value=5, max_value=100, value=20, step=5)
+    min_samples = st.slider("Ignore tiny groups (minimum records)", min_value=5, max_value=100, value=20, step=5)
 
     factor_columns = [
         "day_night_label",
@@ -398,10 +398,10 @@ with t4:
                 x="factor_value",
                 y="target_rate",
                 color="target_rate",
-                title=f"{friendly_factor_names.get(col, col)} vs {target_name} Rate",
+                title=f"{friendly_factor_names.get(col, col)} and {target_name}",
                 hover_data=["total_records", "target_cases", "risk_score"],
             )
-            fig.update_yaxes(title=f"{target_name} Rate")
+            fig.update_yaxes(title=f"Chance of {target_name}")
             st.plotly_chart(style_plotly(fig), use_container_width=True)
 
         if not all_driver_rows:
@@ -411,11 +411,14 @@ with t4:
             top_drivers = drivers.sort_values(["risk_score", "target_rate"], ascending=False).head(12).copy()
             top_drivers["factor"] = top_drivers["factor"].map(lambda x: friendly_factor_names.get(x, x))
             top_drivers["severity_target"] = target_name
-            st.markdown("**Top Likely Drivers (Layman View)**")
-            st.caption(
-                "Higher rate means that factor group has more selected severity cases. "
-                "Risk score balances rate and sample size to avoid tiny-group bias."
-            )
+            st.markdown("**Main Reasons (Easy to Understand)**")
+            top3_simple = top_drivers.head(3).copy()
+            for _, row in top3_simple.iterrows():
+                factor_name = str(row["factor"])
+                factor_value = str(row["factor_value"])
+                chance = float(row["target_rate"]) * 100
+                st.write(f"- In **{factor_name} = {factor_value}**, the chance of **{target_name}** is about **{chance:.1f}%**.")
+            st.caption("These are data-based associations. Use them as guidance with field inspection.")
             st.dataframe(
                 top_drivers[
                     ["severity_target", "factor", "factor_value", "target_rate", "total_records", "target_cases", "risk_score"]
@@ -423,3 +426,11 @@ with t4:
                 use_container_width=True,
                 hide_index=True,
             )
+            with st.expander("Show detailed technical table"):
+                st.dataframe(
+                    top_drivers[
+                        ["severity_target", "factor", "factor_value", "target_rate", "total_records", "target_cases", "risk_score"]
+                    ],
+                    use_container_width=True,
+                    hide_index=True,
+                )
