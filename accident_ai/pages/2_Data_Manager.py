@@ -20,6 +20,22 @@ apply_theme(
     subtitle="Upload versions, set active dataset, and maintain master reference codes.",
 )
 
+with st.expander("How to Use This Page (Simple)", expanded=True):
+    st.markdown(
+        """
+1. Upload your accident Excel file.
+2. Select the file version you want to use as **active dataset**.
+3. The app auto-cleans date/time/day-night issues and shows preview rows.
+4. Edit **Master Reference Tables** only if your code labels are wrong or missing.
+
+**Simple meaning of technical terms**
+- **Active dataset**: The file currently used by all pages.
+- **Validation**: Checking required columns exist.
+- **Cleaning**: Standardizing mixed formats (date/time/labels).
+- **Master Reference**: Code-to-name mapping (example: collision code -> collision label).
+"""
+    )
+
 uploaded = st.file_uploader("Upload accident Excel file", type=["xlsx", "xls"])
 if uploaded is not None:
     saved = save_uploaded_file(uploaded)

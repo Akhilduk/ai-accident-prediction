@@ -12,6 +12,11 @@ from src.ui import apply_theme, style_plotly
 
 PLACE_COL = "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION"
 PLACE_LABEL = "Jurisdiction / Place"
+SEVERITY_LABEL_MAP = {
+    "Fatal": "Fatal",
+    "Grievous": "Serious Injury",
+    "Minor": "Minor Injury",
+}
 
 
 def _apply_filter(df: pd.DataFrame, col: str, values: list) -> pd.DataFrame:
@@ -65,7 +70,7 @@ def _historical_month_ranking(df_hist: pd.DataFrame, target_year: int, target_mo
 apply_theme(
     "Prediction Studio",
     icon="🔮",
-    subtitle="Simple, model-based risk prediction for incidents and place-wise forecasting.",
+    subtitle="Simple AI predictions for incident severity and future hotspot ranking.",
 )
 
 active = get_active_dataset()
@@ -80,6 +85,21 @@ section = st.radio(
     horizontal=True,
     label_visibility="collapsed",
 )
+
+with st.expander("How to Use Prediction Page (Simple)", expanded=False):
+    st.markdown(
+        """
+Choose one section:
+1. **Severity AI Prediction**: Predict how serious an accident may be for selected conditions.
+2. **Hotspot Forecast (5 Years)**: See which places may have higher accident risk in future months.
+
+**Simple meaning of technical terms**
+- **Probability**: Chance of each outcome (higher = more likely).
+- **High Severity Risk**: Combined risk of Fatal + Serious Injury.
+- **Historical Ranking**: Ranking from actual past data.
+- **Predicted Ranking**: Ranking from AI future forecast.
+"""
+    )
 
 if section == "Severity AI Prediction":
     model_bundle = load_best_model()
@@ -167,6 +187,7 @@ if section == "Severity AI Prediction":
             pred_df = pd.DataFrame([row])[features]
             proba = pipe.predict_proba(pred_df)[0]
             out = pd.DataFrame({"Severity": class_labels, "Probability": proba}).sort_values("Probability", ascending=False)
+            out["Severity"] = out["Severity"].map(lambda x: SEVERITY_LABEL_MAP.get(str(x), str(x)))
             st.subheader("AI Severity Prediction")
             st.dataframe(out, use_container_width=True, hide_index=True)
             st.plotly_chart(
@@ -212,6 +233,7 @@ if section == "Severity AI Prediction":
             summary = pd.DataFrame({"Severity": class_labels, "Probability": pred_mat.mean(axis=0)}).sort_values(
                 "Probability", ascending=False
             )
+            summary["Severity"] = summary["Severity"].map(lambda x: SEVERITY_LABEL_MAP.get(str(x), str(x)))
             st.subheader("Average Severity Probability")
             st.dataframe(summary.style.format({"Probability": "{:.2%}"}), use_container_width=True, hide_index=True)
             st.plotly_chart(
@@ -229,9 +251,19 @@ if section == "Severity AI Prediction":
                 .reset_index()
                 .sort_values("Average severe risk", ascending=False)
             )
-            st.subheader("Top Jurisdictions by Predicted Severe Risk")
+            st.subheader("Top Jurisdictions by Predicted High Severity Risk")
             st.dataframe(place_risk.head(30), use_container_width=True, hide_index=True)
-            st.plotly_chart(style_plotly(px.bar(place_risk.head(20), x=PLACE_LABEL, y="Average severe risk", title="Top 20 Jurisdictions by Severe Risk")), use_container_width=True)
+            st.plotly_chart(
+                style_plotly(
+                    px.bar(
+                        place_risk.head(20),
+                        x=PLACE_LABEL,
+                        y="Average severe risk",
+                        title="Top 20 Jurisdictions by High Severity Risk (Fatal + Serious Injury)",
+                    )
+                ),
+                use_container_width=True,
+            )
 
 else:
     st.caption("Forecasting ranks jurisdictions by expected accident volume/risk for future months and dates.")

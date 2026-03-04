@@ -1,10 +1,10 @@
-# NATRAC Accident Analytics & AI Prediction
+# Road Accident Analytics & AI Prediction
 
 Python-only Streamlit app for end-to-end accident analytics, ML severity prediction, and hotspot forecasting.
 
 ## Features
 - Excel upload + local version management (`data/uploads/`)
-- Data cleaning with NATRAC-specific normalization and legend/footer row removal
+- Data cleaning with project-specific normalization and legend/footer row removal
 - Master-reference decoding for collision and vehicle codes
 - UI-based master reference manager (add/edit/delete codes) persisted locally
 - Interactive analytics dashboard with filters, map, charts, and hotspot table

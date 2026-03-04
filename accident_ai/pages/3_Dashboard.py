@@ -10,7 +10,7 @@ from src.viz import plot_monthly, plot_severity, plot_top_hotspots
 apply_theme(
     "Analytics Dashboard",
     icon="📊",
-    subtitle="Use the sidebar filters to instantly update all dashboard visuals.",
+    subtitle="Use the sidebar filters to update charts instantly.",
 )
 
 active = get_active_dataset()
@@ -21,6 +21,22 @@ if active is None:
 df, _ = clean_data(load_excel_cached(str(active)))
 place_col = "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION"
 place_label = "Jurisdiction / Place"
+
+with st.expander("How to Use This Dashboard (Simple)", expanded=False):
+    st.markdown(
+        """
+- Use sidebar filters to focus on **place, year, month, day/night, and severity**.
+- All charts update automatically from your selected filters.
+- **Map & Severity Trend**: Where accidents happen and how severity changes over time.
+- **Collision Insights**: Common collision and vehicle patterns.
+- **Hotspots**: Places with highest accident counts in filtered data.
+- **What Increases Severity?**: Easy explanation of factors linked with serious outcomes.
+
+**Simple meaning of relationship methods**
+- **Pearson**: Best for straight-line relationships.
+- **Spearman**: Best for rank/order relationships.
+"""
+    )
 
 place_options = sorted(df[place_col].astype(str).unique().tolist())
 month_options = sorted(df["month_num"].astype(int).unique().tolist())
@@ -67,6 +83,11 @@ friendly_factor_names = {
     "TYPE_OF_VEHICLE_1_LABEL": "Primary Vehicle Type",
     "TYPE_OF_VEHICLE_2_LABEL": "Secondary Vehicle Type",
 }
+severity_label_map = {
+    "Fatal": "Fatal",
+    "Grievous": "Serious Injury",
+    "Minor": "Minor Injury",
+}
 
 for key, default in {
     "dash_place": [],
@@ -91,12 +112,17 @@ with st.sidebar:
     st.multiselect("Day of Week", dow_options, key="dash_dow")
     st.multiselect("Day / Night", dn_options, key="dash_dn")
     st.multiselect("Road Geometry", geometry_options, key="dash_geometry")
-    st.multiselect("Severity", severity_options, key="dash_severity")
+    st.multiselect(
+        "Severity Level",
+        severity_options,
+        key="dash_severity",
+        format_func=lambda x: severity_label_map.get(str(x), str(x)),
+    )
     st.markdown("---")
-    st.markdown("**Correlation Settings**")
-    st.multiselect("Correlation Keys", correlation_key_options, key="dash_corr_keys")
+    st.markdown("**Relationship Settings**")
+    st.multiselect("Factors to compare", correlation_key_options, key="dash_corr_keys")
     st.selectbox(
-        "Correlation Method",
+        "Relationship Method",
         ["pearson", "spearman"],
         key="dash_corr_method",
         format_func=lambda x: x.title(),
@@ -158,7 +184,7 @@ k2.metric("Fatal", f"{int(f['FATAL'].sum()):,}")
 k3.metric("Night Cases", f"{int((f['day_night_label'] == 'Night').sum()):,}")
 k4.metric("Unique Places", f"{f[place_col].nunique():,}")
 
-t1, t2, t3, t4 = st.tabs(["Map & Severity Trend", "Collision Insights", "Hotspots", "Correlation Matrix"])
+t1, t2, t3, t4 = st.tabs(["Map & Severity Trend", "Collision Insights", "Hotspots", "What Increases Severity?"])
 
 with t1:
     st.markdown("#### Accident Map (Filtered Data)")
@@ -166,12 +192,13 @@ with t1:
     if map_df.empty:
         st.info("No geo points available for current filters.")
     else:
+        map_df["severity_label"] = map_df["severity_target"].map(lambda x: severity_label_map.get(str(x), str(x)))
         fig_map = px.scatter_mapbox(
             map_df,
             lat="Latitude",
             lon="Longitude",
-            color="severity_target",
-            hover_data=["FIR NO", "Date", "severity_target", "PATTERN_OF_COLLISION_LABEL", "TYPE_OF_COLLISION_LABEL"],
+            color="severity_label",
+            hover_data=["FIR NO", "Date", "severity_label", "PATTERN_OF_COLLISION_LABEL", "TYPE_OF_COLLISION_LABEL"],
             zoom=9,
             height=420,
         )
@@ -236,8 +263,9 @@ with t2:
     )
 
     jn = f.groupby(["JN/NOT", "severity_target"]).size().reset_index(name="count")
+    jn["severity_label"] = jn["severity_target"].map(lambda x: severity_label_map.get(str(x), str(x)))
     st.plotly_chart(
-        style_plotly(px.bar(jn, x="JN/NOT", y="count", color="severity_target", barmode="group", title="Junction vs Non-Junction (Filtered)")),
+        style_plotly(px.bar(jn, x="JN/NOT", y="count", color="severity_label", barmode="group", title="Junction vs Non-Junction (Filtered)")),
         use_container_width=True,
     )
 
@@ -247,7 +275,7 @@ with t3:
     st.dataframe(top_hotspots.rename(columns={place_col: place_label}), use_container_width=True, height=420)
 
 with t4:
-    st.markdown("#### Correlation Matrix (Filtered Data)")
+    st.markdown("#### Factor Relationship Matrix (Filtered Data)")
     selected_keys = [k for k in st.session_state["dash_corr_keys"] if k in f.columns]
     if not selected_keys:
         st.info("Select at least one correlation key from sidebar.")
@@ -265,17 +293,17 @@ with t4:
 
         corr_method = st.session_state.get("dash_corr_method", "pearson")
         corr = corr_df.corr(method=corr_method, numeric_only=True).round(3)
-        fig_corr = px.imshow(corr, text_auto=True, aspect="auto", title=f"Feature Correlation Matrix ({corr_method.title()})")
+        fig_corr = px.imshow(corr, text_auto=True, aspect="auto", title=f"Feature Relationship Matrix ({corr_method.title()})")
         st.plotly_chart(style_plotly(fig_corr), use_container_width=True)
 
         sev_col = st.selectbox(
             "Find factors affecting",
             ["severity_high", "severity_fatal", "severity_grievous", "severity_minor"],
             format_func=lambda x: {
-                "severity_high": "High Severity (Fatal + Grievous)",
+                "severity_high": "High Severity (Fatal + Serious Injury)",
                 "severity_fatal": "Fatal",
-                "severity_grievous": "Grievous",
-                "severity_minor": "Minor",
+                "severity_grievous": "Serious Injury",
+                "severity_minor": "Minor Injury",
             }[x],
         )
         sev_corr = (
@@ -299,7 +327,7 @@ with t4:
                     sev_corr,
                     x="key",
                     y="correlation",
-                    title=f"Top {corr_method.title()} correlations with {sev_col.replace('severity_', '').title()}",
+                    title=f"Top {corr_method.title()} relationships with {sev_col.replace('severity_', '').title()}",
                 )
             ),
             use_container_width=True,
@@ -329,7 +357,7 @@ with t4:
             f"Low = {int(level_counts.get('Low', 0))}"
         )
         st.caption(
-            "This shows association, not strict cause-and-effect. Use it as planning guidance with field verification."
+            "This shows a relationship pattern, not strict cause-and-effect. Use it as planning guidance with field checks."
         )
         st.dataframe(
             sev_corr[["factor", "impact_level", "correlation", "abs_correlation", "impact_direction"]],
@@ -341,7 +369,7 @@ with t4:
     st.markdown("#### Why Is Severity High? (Simple Explanation)")
     target_mode = st.selectbox(
         "Analyze causes for",
-        ["High Severity (Fatal + Grievous)", "Fatal", "Grievous", "Minor"],
+        ["High Severity (Fatal + Serious Injury)", "Fatal", "Serious Injury", "Minor Injury"],
     )
     min_samples = st.slider("Ignore tiny groups (minimum records)", min_value=5, max_value=100, value=20, step=5)
 
@@ -365,9 +393,15 @@ with t4:
         default=["day_night_label", "GEOMETRY", "JN/NOT", "time_bucket", "TYPE_OF_COLLISION_LABEL"],
     )
 
-    if target_mode == "High Severity (Fatal + Grievous)":
+    if target_mode == "High Severity (Fatal + Serious Injury)":
         target_flag = f["severity_target"].isin(["Fatal", "Grievous"])
         target_name = "High Severity"
+    elif target_mode == "Serious Injury":
+        target_flag = f["severity_target"].eq("Grievous")
+        target_name = target_mode
+    elif target_mode == "Minor Injury":
+        target_flag = f["severity_target"].eq("Minor")
+        target_name = target_mode
     else:
         target_flag = f["severity_target"].eq(target_mode)
         target_name = target_mode

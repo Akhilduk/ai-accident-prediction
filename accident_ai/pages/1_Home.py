@@ -8,9 +8,9 @@ from src.ui import apply_theme
 from src.viz import plot_top_hotspots
 
 apply_theme(
-    "NATRAC Safety Intelligence Portal",
-    icon="NATRAC",
-    subtitle="A user-friendly AI platform to explore accident patterns, train models, and forecast high-risk areas.",
+    "Road Safety Intelligence Portal",
+    icon="AI",
+    subtitle="A simple platform to understand accident patterns, train models, and forecast high-risk areas.",
 )
 
 active = get_active_dataset()
@@ -41,12 +41,26 @@ k1, k2, k3 = st.columns(3)
 k4, k5, k6 = st.columns(3)
 k1.metric("Total Accidents", f"{len(df):,}")
 k2.metric("Fatal Count", f"{int(df['FATAL'].sum()):,}")
-k3.metric("Grievous Count", f"{int(df['GRIEVOUS'].sum()):,}")
+k3.metric("Serious Injury Count", f"{int(df['GRIEVOUS'].sum()):,}")
 k4.metric("Minor Count", f"{int(df['MINOR'].sum()):,}")
 k5.metric("Fatal Rate", f"{fatal_rate:.2f}%")
 k6.metric("Top Hotspot", str(top_place))
 
 st.caption(f"Active dataset: {Path(active).name} | Footer rows removed during cleaning: {info['removed_footer_rows']}")
+
+with st.expander("How to Read This Page (Simple)", expanded=False):
+    st.markdown(
+        """
+- **Total Accidents**: Total reported cases in current dataset.
+- **Fatal Count**: Cases where death was reported.
+- **Serious Injury Count**: Cases with severe injury.
+- **Minor Count**: Cases with minor injury.
+- **Fatal Rate**: Fatal cases as percentage of total cases.
+- **Top Hotspot**: Place with highest accident count in current data.
+
+Use this page for a quick summary, then open **Dashboard** for deeper analysis.
+"""
+    )
 
 t1, t2 = st.tabs(["What You Can Do", "Navigate"])
 

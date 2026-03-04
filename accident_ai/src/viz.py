@@ -5,9 +5,17 @@ import plotly.express as px
 
 from src.ui import style_plotly
 
+SEVERITY_LABEL_MAP = {
+    "Fatal": "Fatal",
+    "Grievous": "Serious Injury",
+    "Minor": "Minor Injury",
+}
+
 
 def plot_severity(df: pd.DataFrame):
-    fig = px.pie(df, names="severity_target", hole=0.56, title="Severity Distribution")
+    view = df.copy()
+    view["severity_label"] = view["severity_target"].map(lambda x: SEVERITY_LABEL_MAP.get(str(x), str(x)))
+    fig = px.pie(view, names="severity_label", hole=0.56, title="Severity Distribution")
     fig.update_traces(textposition="inside", textinfo="percent+label")
     return style_plotly(fig)
 
@@ -15,8 +23,9 @@ def plot_severity(df: pd.DataFrame):
 def plot_monthly(df: pd.DataFrame):
     g = df.groupby(["year", "month_num", "severity_target"]).size().reset_index(name="count")
     g = g.sort_values(["year", "month_num"])
+    g["severity_label"] = g["severity_target"].map(lambda x: SEVERITY_LABEL_MAP.get(str(x), str(x)))
     g["period"] = pd.to_datetime(dict(year=g["year"].astype(int), month=g["month_num"].astype(int), day=1))
-    fig = px.line(g, x="period", y="count", color="severity_target", markers=True, title="Month-wise Severity Trend")
+    fig = px.line(g, x="period", y="count", color="severity_label", markers=True, title="Month-wise Severity Trend")
     fig.update_xaxes(tickformat="%Y-%m", tickangle=-35, nticks=12)
     return style_plotly(fig)
 
