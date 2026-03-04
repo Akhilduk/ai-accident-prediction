@@ -13,6 +13,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
 
 from src.config import BEST_MODEL_PATH, LEADERBOARD_PATH, REPORTS_DIR, TRAINING_REPORT_CSV, TRAINING_REPORT_JSON
 
@@ -70,6 +71,8 @@ def train_and_compare(df: pd.DataFrame, feature_cols: list[str], target_col: str
     train_df = df[df[target_col].notna()].copy()
     X = train_df[feature_cols]
     y = train_df[target_col]
+    label_encoder = LabelEncoder()
+    label_encoder.fit(y)
     x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
     preprocessor = _build_preprocessor(X)
@@ -82,19 +85,27 @@ def train_and_compare(df: pd.DataFrame, feature_cols: list[str], target_col: str
 
     for name, model in models.items():
         pipe = Pipeline([("preprocessor", preprocessor), ("model", model)])
-        cv_scores = cross_val_score(pipe, x_train, y_train, scoring="f1_macro", cv=cv)
-        pipe.fit(x_train, y_train)
-        pred = pipe.predict(x_test)
+        use_encoded_target = name == "XGBoost"
+        y_train_fit = label_encoder.transform(y_train) if use_encoded_target else y_train
+        y_test_eval = label_encoder.transform(y_test) if use_encoded_target else y_test
+
+        cv_scores = cross_val_score(pipe, x_train, y_train_fit, scoring="f1_macro", cv=cv)
+        pipe.fit(x_train, y_train_fit)
+        pred_raw = pipe.predict(x_test)
+        pred = label_encoder.inverse_transform(pred_raw.astype(int)) if use_encoded_target else pred_raw
         proba = pipe.predict_proba(x_test) if hasattr(pipe, "predict_proba") else None
+        class_labels = label_encoder.classes_.tolist() if use_encoded_target else list(pipe.classes_)
         metrics = {
             "model": name,
             "cv_f1_macro_mean": float(cv_scores.mean()),
-            "test_accuracy": float(accuracy_score(y_test, pred)),
-            "test_f1_macro": float(f1_score(y_test, pred, average="macro")),
-            "test_recall_macro": float(recall_score(y_test, pred, average="macro")),
+            "test_accuracy": float(accuracy_score(y_test_eval, pred_raw) if use_encoded_target else accuracy_score(y_test, pred)),
+            "test_f1_macro": float(f1_score(y_test_eval, pred_raw, average="macro") if use_encoded_target else f1_score(y_test, pred, average="macro")),
+            "test_recall_macro": float(
+                recall_score(y_test_eval, pred_raw, average="macro") if use_encoded_target else recall_score(y_test, pred, average="macro")
+            ),
         }
         rows.append(metrics)
-        trained[name] = {"pipeline": pipe, "y_test": y_test, "pred": pred, "proba": proba}
+        trained[name] = {"pipeline": pipe, "y_test": y_test, "pred": pred, "proba": proba, "class_labels": class_labels}
         report[name] = {
             "metrics": metrics,
             "classification_report": classification_report(y_test, pred, output_dict=True),
@@ -105,10 +116,20 @@ def train_and_compare(df: pd.DataFrame, feature_cols: list[str], target_col: str
     leaderboard = pd.DataFrame(rows).sort_values(["test_f1_macro", "cv_f1_macro_mean"], ascending=False)
     best_model_name = leaderboard.iloc[0]["model"]
     best_pipeline = trained[best_model_name]["pipeline"]
+    best_class_labels = trained[best_model_name]["class_labels"]
 
     BEST_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"pipeline": best_pipeline, "features": feature_cols, "target": target_col}, BEST_MODEL_PATH)
+    joblib.dump(
+        {
+            "pipeline": best_pipeline,
+            "features": feature_cols,
+            "target": target_col,
+            "class_labels": best_class_labels,
+            "model_name": best_model_name,
+        },
+        BEST_MODEL_PATH,
+    )
     leaderboard.to_csv(LEADERBOARD_PATH, index=False)
     leaderboard.to_csv(TRAINING_REPORT_CSV, index=False)
     Path(TRAINING_REPORT_JSON).write_text(json.dumps(report, indent=2))

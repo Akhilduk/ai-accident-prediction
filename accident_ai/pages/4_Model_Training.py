@@ -8,8 +8,13 @@ from src.cleaning import clean_data
 from src.config import TRAINING_REPORT_JSON
 from src.data_io import get_active_dataset, load_excel_cached
 from src.modeling import train_and_compare
+from src.ui import apply_theme
 
-st.title("Model Training & Comparison")
+apply_theme(
+    "Model Training & Comparison",
+    icon="🧠",
+    subtitle="Benchmark models and save the best pipeline for prediction.",
+)
 active = get_active_dataset()
 if active is None:
     st.warning("No dataset available. Upload data first.")
@@ -37,7 +42,7 @@ feature_cols = [
     "is_night",
 ]
 
-if st.button("Train all 3 models"):
+if st.button("🚀 Train all 3 models", type="primary"):
     with st.spinner("Training in progress..."):
         leaderboard, report, best = train_and_compare(df, feature_cols)
     st.success(f"Best model selected: {best}")

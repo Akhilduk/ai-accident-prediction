@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 import pandas as pd
 import streamlit as st
 
@@ -17,8 +18,16 @@ def load_excel_cached(path: str) -> pd.DataFrame:
     return _read_excel(Path(path))
 
 
+
+
+def _header_key(name: str) -> str:
+    s = str(name).strip()
+    s = re.sub(r"\s+", " ", s)
+    s = re.sub(r"\s*/\s*", "/", s)
+    return s.upper()
 def validate_columns(df: pd.DataFrame) -> tuple[bool, list[str]]:
-    missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
+    df_keys = {_header_key(c) for c in df.columns}
+    missing = [c for c in REQUIRED_COLUMNS if _header_key(c) not in df_keys]
     return len(missing) == 0, missing
 
 

@@ -3,3 +3,16 @@ __pycache__/
 *.pyo
 *.pyd
 .DS_Store
+
+# virtual environments
+.venv/
+venv/
+accident_ai/.venv/
+
+# local runtime/artifacts
+catboost_info/
+accident_ai/catboost_info/
+models/
+reports/
+data/uploads/
+data/processed/

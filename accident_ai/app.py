@@ -1,9 +1,20 @@
 import streamlit as st
 
-st.set_page_config(page_title="NATRAC Accident Analytics & AI Prediction", layout="wide", page_icon="🚦")
+from src.ui import apply_theme
 
-st.title("NATRAC Accident Analytics & AI Prediction")
-st.markdown(
-    "Use the left sidebar to navigate pages: **Home**, **Data Manager**, **Dashboard**, **Model Training**, and **Prediction**."
+st.set_page_config(page_title="NATRAC Accident Analytics and AI Prediction", layout="wide", page_icon="AI")
+
+apply_theme(
+    "NATRAC Accident Analytics and AI Prediction",
+    icon="AI",
+    subtitle="A complete workflow for data cleaning, analytics dashboard, model training, and AI-based forecasting.",
 )
-st.info("Tip: upload/select dataset in Data Manager first, then explore analytics and train models.")
+
+st.markdown(
+    """
+    <div class="glass-card">
+      <b>Quick Start:</b> Open <b>Data Manager</b> to select dataset, then visit <b>Dashboard</b> and <b>Prediction</b>.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)

@@ -1,0 +1,194 @@
+{
+  "RandomForest": {
+    "metrics": {
+      "model": "RandomForest",
+      "cv_f1_macro_mean": 0.29280255823892104,
+      "test_accuracy": 0.7532467532467533,
+      "test_f1_macro": 0.307020264681555,
+      "test_recall_macro": 0.33876262626262627
+    },
+    "classification_report": {
+      "Fatal": {
+        "precision": 0.5,
+        "recall": 0.03333333333333333,
+        "f1-score": 0.0625,
+        "support": 30.0
+      },
+      "Grievous": {
+        "precision": 0.762114537444934,
+        "recall": 0.9829545454545454,
+        "f1-score": 0.858560794044665,
+        "support": 176.0
+      },
+      "Minor": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 25.0
+      },
+      "accuracy": 0.7532467532467533,
+      "macro avg": {
+        "precision": 0.42070484581497797,
+        "recall": 0.33876262626262627,
+        "f1-score": 0.307020264681555,
+        "support": 231.0
+      },
+      "weighted avg": {
+        "precision": 0.6455937601312051,
+        "recall": 0.7532467532467533,
+        "f1-score": 0.662258440484247,
+        "support": 231.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        1,
+        29,
+        0
+      ],
+      [
+        1,
+        173,
+        2
+      ],
+      [
+        0,
+        25,
+        0
+      ]
+    ],
+    "labels": [
+      "Fatal",
+      "Grievous",
+      "Minor"
+    ]
+  },
+  "XGBoost": {
+    "metrics": {
+      "model": "XGBoost",
+      "cv_f1_macro_mean": 0.3412453726093569,
+      "test_accuracy": 0.7272727272727273,
+      "test_f1_macro": 0.3821067821067821,
+      "test_recall_macro": 0.37792929292929295
+    },
+    "classification_report": {
+      "Fatal": {
+        "precision": 0.3333333333333333,
+        "recall": 0.13333333333333333,
+        "f1-score": 0.19047619047619047,
+        "support": 30.0
+      },
+      "Grievous": {
+        "precision": 0.7751196172248804,
+        "recall": 0.9204545454545454,
+        "f1-score": 0.8415584415584415,
+        "support": 176.0
+      },
+      "Minor": {
+        "precision": 0.2,
+        "recall": 0.08,
+        "f1-score": 0.11428571428571428,
+        "support": 25.0
+      },
+      "accuracy": 0.7272727272727273,
+      "macro avg": {
+        "precision": 0.43615098351940457,
+        "recall": 0.37792929292929295,
+        "f1-score": 0.3821067821067821,
+        "support": 231.0
+      },
+      "weighted avg": {
+        "precision": 0.6555023923444977,
+        "recall": 0.7272727272727273,
+        "f1-score": 0.6782931354359926,
+        "support": 231.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        4,
+        25,
+        1
+      ],
+      [
+        7,
+        162,
+        7
+      ],
+      [
+        1,
+        22,
+        2
+      ]
+    ],
+    "labels": [
+      "Fatal",
+      "Grievous",
+      "Minor"
+    ]
+  },
+  "CatBoost": {
+    "metrics": {
+      "model": "CatBoost",
+      "cv_f1_macro_mean": 0.2941921921574634,
+      "test_accuracy": 0.7619047619047619,
+      "test_f1_macro": 0.32824523147103796,
+      "test_recall_macro": 0.3517676767676768
+    },
+    "classification_report": {
+      "Fatal": {
+        "precision": 0.6666666666666666,
+        "recall": 0.06666666666666667,
+        "f1-score": 0.12121212121212122,
+        "support": 30.0
+      },
+      "Grievous": {
+        "precision": 0.7665198237885462,
+        "recall": 0.9886363636363636,
+        "f1-score": 0.8635235732009926,
+        "support": 176.0
+      },
+      "Minor": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 25.0
+      },
+      "accuracy": 0.7619047619047619,
+      "macro avg": {
+        "precision": 0.47772883015173767,
+        "recall": 0.3517676767676768,
+        "f1-score": 0.32824523147103796,
+        "support": 231.0
+      },
+      "weighted avg": {
+        "precision": 0.670595190418979,
+        "recall": 0.7619047619047619,
+        "f1-score": 0.6736645563625037,
+        "support": 231.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        2,
+        28,
+        0
+      ],
+      [
+        1,
+        174,
+        1
+      ],
+      [
+        0,
+        25,
+        0
+      ]
+    ],
+    "labels": [
+      "Fatal",
+      "Grievous",
+      "Minor"
+    ]
+  }
+}

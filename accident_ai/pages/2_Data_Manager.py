@@ -12,8 +12,13 @@ from src.data_io import (
     validate_columns,
 )
 from src.master_reference import DEFAULT_MASTER_REF_TABLES, load_master_reference, save_master_reference
+from src.ui import apply_theme
 
-st.title("Data Upload & Manager")
+apply_theme(
+    "Data Upload & Manager",
+    icon="🗂️",
+    subtitle="Upload versions, set active dataset, and maintain master reference codes.",
+)
 
 uploaded = st.file_uploader("Upload accident Excel file", type=["xlsx", "xls"])
 if uploaded is not None:

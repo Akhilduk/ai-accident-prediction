@@ -1,0 +1,76 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Times New Roman;}{\f1 Arial;}}
+\paperw11906\paperh16838\margl1134\margr1134\margt1134\margb1134
+\fs22
+\pard\qc\b AI-BASED ACCIDENT ANALYTICS AND HOTSPOT FORECASTING FOR JURISDICTION-LEVEL ROAD SAFETY PLANNING\b0\par
+\pard\qc <YOUR NAME>, Department of Civil Engineering, <COLLEGE NAME>, <CITY>, India\par
+\pard\qc Email: <YOUR EMAIL>\par
+\pard\sb180\sa120\b Abstract\.\b0\par
+\pard Road traffic safety planning needs both historical analysis and predictive intelligence. This project presents a civil-engineering oriented AI platform for accident data cleaning, jurisdiction-level analytics, severity prediction, and hotspot forecasting. The system resolves mixed-format records, decodes coded attributes, and supports interactive filtering for planners. Three models were benchmarked for severity classification: Random Forest, XGBoost, and CatBoost. For hotspot planning, a five-year recursive monthly forecast was implemented with calendar-aligned lag features and seasonality. A comparative toggle between Historical Month Ranking and Predicted Month Ranking improves interpretability for decision-makers.\par
+\pard\sb120\b Index Terms\-\b0 Road Safety, Accident Analytics, Severity Prediction, Hotspot Forecasting, Machine Learning, Civil Engineering.\par
+
+\pard\sb180\b I. INTRODUCTION\b0\par
+\pard Road traffic accidents remain a critical civil infrastructure and transportation safety issue. This work develops an AI-based system for jurisdiction-level accident analytics and predictive planning.\par
+
+\pard\sb180\b II. PROBLEM STATEMENT\b0\par
+\pard Key issues in source records include mixed date formats, mixed time formats, category inconsistencies, and coded fields requiring decoding. These affect model reliability and interpretation.\par
+
+\pard\sb180\b III. OBJECTIVES\b0\par
+\pard 1. Build an end-to-end accident analytics and prediction platform.\par
+\pard 2. Standardize and clean mixed-format accident records.\par
+\pard 3. Train and compare severity prediction models.\par
+\pard 4. Forecast hotspot risk for 5 years.\par
+\pard 5. Provide historical vs predicted hotspot comparison.\par
+
+\pard\sb180\b IV. DATA DESCRIPTION AND PREPROCESSING\b0\par
+\pard The dataset includes jurisdiction, date/time, day/night, collision details, vehicle details, severity counts, infrastructure indicators, and coordinates. Cleaning includes header normalization, mixed date/time parsing, D/N normalization, code decoding, and missing-value handling.\par
+
+\pard\sb180\b V. METHODOLOGY\b0\par
+\pard\b A. Severity Prediction\par\b0
+\pard Models: RandomForest, XGBoost, CatBoost with encoded categorical features and cross-validation.\par
+\pard\b B. Hotspot Forecasting\par\b0
+\pard Monthly jurisdiction counts are created on a continuous calendar timeline, then forecast recursively for 60 months using lag and seasonality features.\par
+
+\pard\sb180\b VI. SYSTEM IMPLEMENTATION\b0\par
+\pard The system is implemented in Python using Streamlit, pandas, scikit-learn, xgboost, catboost, and plotly.\par
+
+\pard\sb180\b VII. RESULTS AND DISCUSSION\b0\par
+\pard Historical month ranking reflects actual observations, while predicted ranking reflects learned trend behavior across years.\par
+
+\pard\sb180\b VIII. LIMITATIONS\b0\par
+\pard 1. No exogenous traffic/weather covariates yet.\par
+\pard 2. Aggregation may hide micro blackspots.\par
+\pard 3. Forecast uncertainty bounds not shown in UI.\par
+
+\pard\sb180\b IX. CONCLUSION\b0\par
+\pard The platform supports data-driven safety planning through cleaned analytics, severity prediction, and hotspot forecasting.\par
+
+\pard\sb180\b X. FUTURE WORK\b0\par
+\pard Add explainability, external covariates, uncertainty intervals, GIS enrichment, and persistent deployment backend.\par
+
+\pard\sb180\b REFERENCES\b0\par
+\pard [1] World Health Organization, \i Global Status Report on Road Safety\i0 , latest ed.\par
+\pard [2] Ministry of Road Transport and Highways, Government of India, \i Road Accidents in India\i0 , latest annual report.\par
+\pard [3] T. Chen and C. Guestrin, ``XGBoost: A Scalable Tree Boosting System,'' in \i Proc. KDD\i0 , 2016.\par
+\pard [4] L. Breiman, ``Random Forests,'' \i Machine Learning\i0 , vol. 45, no. 1, pp. 5-32, 2001.\par
+\pard [5] Scikit-learn Documentation. Online: https://scikit-learn.org\par
+\pard [6] Streamlit Documentation. Online: https://docs.streamlit.io\par
+
+\pard\sb180\b FIGURE PLACEHOLDERS\b0\par
+\pard Fig. 1. Overall system architecture.\par
+\pard Fig. 2. Data manager page.\par
+\pard Fig. 3. Dashboard with filters.\par
+\pard Fig. 4. Month-wise severity trend.\par
+\pard Fig. 5. Severity distribution.\par
+\pard Fig. 6. Model comparison chart.\par
+\pard Fig. 7. Severity prediction output.\par
+\pard Fig. 8. Hotspot forecast (Predicted mode).\par
+\pard Fig. 9. Hotspot ranking (Historical mode).\par
+\pard Fig. 10. Jurisdiction trend comparison.\par
+
+\pard\sb180\b TABLE PLACEHOLDERS\b0\par
+\pard TABLE I. Input Variables Used in the Study\par
+\pard TABLE II. Data Cleaning Rules\par
+\pard TABLE III. Severity Model Comparison\par
+\pard TABLE IV. Historical vs Predicted Hotspot Snapshot\par
+}

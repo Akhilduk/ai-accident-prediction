@@ -1,0 +1,481 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Times New Roman;}{\f1 Arial;}}
+\paperw11906\paperh16838\margl1134\margr1134\margt1134\margb1134
+\fs22
+\pard\qc\sa180\b\fs28 B.TECH CIVIL ENGINEERING PROJECT REPORT\b0\fs22\par
+\par
+\pard\sa120\b AI-Based Accident Analytics and Hotspot Forecasting for Jurisdiction-Level Road Safety Planning\b0\par
+\par
+\pard ---\par
+\par
+\pard\sa120\b COVER PAGE (Template)\b0\par
+\par
+\pard **PROJECT TITLE**\par
+\pard AI-Based Accident Analytics and Hotspot Forecasting for Jurisdiction-Level Road Safety Planning\par
+\par
+\pard **Submitted by**\par
+\pard **Student Name:** `[YOUR NAME]`\par
+\pard **Register Number:** `[YOUR REGISTER NUMBER]`\par
+\par
+\pard **Under the Guidance of**\par
+\pard **Guide Name/Designation:** `[GUIDE NAME], [DESIGNATION], Department of Civil Engineering`\par
+\par
+\pard **Department of Civil Engineering**\par
+\pard `[COLLEGE NAME]`\par
+\pard `[UNIVERSITY NAME]`\par
+\pard `[CITY, STATE]`\par
+\par
+\pard **Academic Year:** `[20XX-20XX]`\par
+\par
+\pard ---\par
+\par
+\pard\sa120\b CERTIFICATE (Use College Prescribed Format)\b0\par
+\par
+\pard This is to certify that the project report entitled **“AI-Based Accident Analytics and Hotspot Forecasting for Jurisdiction-Level Road Safety Planning”** submitted by **[YOUR NAME]** (Reg. No. **[YOUR REGISTER NUMBER]**) to the Department of Civil Engineering, **[COLLEGE NAME]**, is a bonafide record of work carried out under my supervision.\par
+\par
+\pard **Guide Signature**\par
+\pard **HOD Signature**\par
+\pard **External/Internal Examiner**\par
+\par
+\pard ---\par
+\par
+\pard\sa120\b DECLARATION\b0\par
+\par
+\pard I, **[YOUR NAME]**, hereby declare that this report is my original work completed under the guidance of **[GUIDE NAME]** and has not been submitted for any other degree/diploma in any institution.\par
+\par
+\pard **Place:**\par
+\pard **Date:**\par
+\pard **Student Signature**\par
+\par
+\pard ---\par
+\par
+\pard\sa120\b ACKNOWLEDGEMENT\b0\par
+\par
+\pard I express my sincere gratitude to my project guide **[GUIDE NAME]** for continuous support, technical insights, and valuable suggestions throughout this work. I thank the Head of the Department and faculty members of Civil Engineering Department, **[COLLEGE NAME]**, for their guidance and support. I also acknowledge my friends and family for their encouragement.\par
+\par
+\pard ---\par
+\par
+\pard\sa120\b ABSTRACT\b0\par
+\par
+\pard Road traffic safety planning in civil engineering requires both historical analysis and predictive capability for proactive interventions. This project presents an AI-based decision support platform for accident data cleaning, analytics, severity prediction, and hotspot forecasting at jurisdiction level.\par
+\par
+\pard The system resolves mixed-format data issues such as inconsistent date/time representations, encoded categorical values, and day/night label variations. It integrates an interactive dashboard, model benchmarking module, and prediction studio for non-technical users. Severity prediction models (Random Forest, XGBoost, CatBoost) are evaluated using cross-validation and test metrics. A five-year recursive monthly hotspot forecasting model is implemented with calendar continuity and lag-based temporal features.\par
+\par
+\pard The final platform supports practical civil engineering use cases such as risk-prioritized intervention planning, junction treatment targeting, and temporal enforcement strategy. In addition, a Historical-vs-Predicted ranking toggle improves transparency and trust in forecasting outputs.\par
+\par
+\pard **Keywords:** Road Safety, Accident Analytics, Hotspot Forecasting, Severity Prediction, Civil Engineering, Machine Learning.\par
+\par
+\pard ---\par
+\par
+\pard\sa120\b TABLE OF CONTENTS (Fill Page Numbers After Final Formatting)\b0\par
+\par
+\pard 1. Introduction ............................................. `__`\par
+\pard 2. Problem Statement ........................................ `__`\par
+\pard 3. Objectives ............................................... `__`\par
+\pard 4. Scope of Work ............................................ `__`\par
+\pard 5. Study Area and Dataset Description ....................... `__`\par
+\pard 6. Data Preprocessing and Standardization ................... `__`\par
+\pard 7. System Architecture ...................................... `__`\par
+\pard 8. Methodology .............................................. `__`\par
+\pard 9. Implementation Details ................................... `__`\par
+\pard 10. Results and Discussion .................................. `__`\par
+\pard 11. Civil Engineering Interpretation ........................ `__`\par
+\pard 12. Validation, Reliability, and Error Analysis ............. `__`\par
+\pard 13. Limitations ............................................. `__`\par
+\pard 14. Conclusion .............................................. `__`\par
+\pard 15. Future Scope ............................................ `__`\par
+\pard 16. References .............................................. `__`\par
+\pard 17. Appendices .............................................. `__`\par
+\par
+\pard ---\par
+\par
+\pard\sa120\b LIST OF FIGURES (Fill Page Numbers)\b0\par
+\par
+\pard Fig. 1. Overall system architecture ...................................... `__`\par
+\pard Fig. 2. Data Manager interface ........................................... `__`\par
+\pard Fig. 3. Dashboard with sidebar filters ................................... `__`\par
+\pard Fig. 4. Accident map (filtered) .......................................... `__`\par
+\pard Fig. 5. Month-wise severity trend ........................................ `__`\par
+\pard Fig. 6. Severity distribution ............................................ `__`\par
+\pard Fig. 7. Model training leaderboard ....................................... `__`\par
+\pard Fig. 8. Confusion matrix of best model ................................... `__`\par
+\pard Fig. 9. Single incident severity prediction .............................. `__`\par
+\pard Fig. 10. Hotspot forecast (Predicted mode) ............................... `__`\par
+\pard Fig. 11. Hotspot ranking (Historical mode) ............................... `__`\par
+\pard Fig. 12. Jurisdiction trend comparison ................................... `__`\par
+\par
+\pard ---\par
+\par
+\pard\sa120\b LIST OF TABLES (Fill Page Numbers)\b0\par
+\par
+\pard Table 1. Dataset fields and engineering meaning .......................... `__`\par
+\pard Table 2. Data cleaning rules ............................................. `__`\par
+\pard Table 3. Severity model comparison ....................................... `__`\par
+\pard Table 4. Historical vs predicted hotspot comparison ...................... `__`\par
+\pard Table 5. Software and hardware requirements .............................. `__`\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 1. INTRODUCTION\b0\fs22\par
+\par
+\pard Road accidents continue to be a major challenge in transportation engineering and public safety. Traditional road safety analysis approaches are mostly descriptive and retrospective, which limits their utility for preventive planning. Civil engineers increasingly require digital tools that can integrate data quality correction, analytics, and prediction in one workflow.\par
+\par
+\pard This project develops an end-to-end AI-assisted platform focused on:\par
+\pard 1. robust preprocessing of accident records,\par
+\pard 2. jurisdiction-level risk exploration,\par
+\pard 3. machine learning based severity prediction,\par
+\pard 4. long-range hotspot forecasting for planning support.\par
+\par
+\pard The system is implemented as an interactive web application so that domain users without programming experience can directly use filtered dashboards and predictive outputs.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 2. PROBLEM STATEMENT\b0\fs22\par
+\par
+\pard Accident data is often operationally collected and manually maintained, leading to:\par
+\pard 1. inconsistent date formats (`dd/mm/yyyy`, `dd-mm-yyyy`, mixed text),\par
+\pard 2. inconsistent time formats (`8.5`, `11.15`, `20.0`, `20:30`),\par
+\pard 3. coded fields for collisions/vehicles requiring decoding,\par
+\pard 4. variations in day-night tags (`D/N`, `D/ N`, `Day`, `Night`),\par
+\pard 5. footer/legend rows embedded with data rows.\par
+\par
+\pard Because of this, direct model training can produce unreliable trends and misleading outputs. Planning agencies need a system that first standardizes data and then produces interpretable predictions (especially jurisdiction-wise future hotspot ranking).\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 3. OBJECTIVES\b0\fs22\par
+\par
+\pard 1. Build a complete accident analytics and prediction platform for jurisdiction-level planning.\par
+\pard 2. Standardize mixed-format records with maximum retention of valid data.\par
+\pard 3. Train and compare multiple severity prediction models.\par
+\pard 4. Forecast hotspot risk for a 5-year horizon.\par
+\pard 5. Provide side-by-side historical and predicted hotspot ranking.\par
+\pard 6. Deliver a user-friendly interface for civil engineering practitioners.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 4. SCOPE OF WORK\b0\fs22\par
+\par
+\pard\sa120\b 4.1 In Scope\b0\par
+\pard 1. Excel-based accident data ingestion.\par
+\pard 2. Cleaning and transformation of structured tabular records.\par
+\pard 3. Severity classification and hotspot forecasting.\par
+\pard 4. Interactive analytics dashboard and planning interface.\par
+\par
+\pard\sa120\b 4.2 Out of Scope\b0\par
+\pard 1. Real-time IoT/live traffic feeds.\par
+\pard 2. Automatic CCTV/video analytics.\par
+\pard 3. Full GIS network simulation.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 5. STUDY AREA AND DATASET DESCRIPTION\b0\fs22\par
+\par
+\pard Dataset contains jurisdiction-level accident records with key fields:\par
+\pard 1. Place/Jurisdiction\par
+\pard 2. FIR number\par
+\pard 3. Date, time, day/night\par
+\pard 4. Collision pattern/type\par
+\pard 5. Vehicle type fields\par
+\pard 6. Fatal/Grievous/Minor indicators\par
+\pard 7. Geometry and infrastructure fields (median/shoulder/footpath/junction)\par
+\pard 8. Latitude and longitude\par
+\par
+\pard The records are suitable for both temporal and spatial analytics once standardized.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 6. DATA PREPROCESSING AND STANDARDIZATION\b0\fs22\par
+\par
+\pard\sa120\b 6.1 Header Normalization\b0\par
+\pard Column variants are canonicalized to expected schema (`D/ N` -> `D/N`, spacing and slash normalization).\par
+\par
+\pard\sa120\b 6.2 Date Standardization\b0\par
+\pard Multi-pass parsing supports slash/hyphen formats and fallback from alternate date components (`Year of Accident`, `Month of the year`, `DAY OF THE WEEK`).\par
+\par
+\pard\sa120\b 6.3 Time Standardization\b0\par
+\pard Time values like `8.5`, `9.3`, `11.15` are converted to hour-minute semantics with fallback parser.\par
+\par
+\pard\sa120\b 6.4 Category Normalization\b0\par
+\pard Day/Night values normalized to `D`/`N`; additional readable label generated as `day_night_label`.\par
+\par
+\pard\sa120\b 6.5 Master Reference Decoding\b0\par
+\pard Code columns for collision and vehicle classes are decoded through editable reference tables.\par
+\par
+\pard\sa120\b 6.6 Missing Value Handling\b0\par
+\pard 1. Numeric columns: median fill.\par
+\pard 2. Categorical columns: mode fill with category-safe handling.\par
+\par
+\pard\sa120\b 6.7 Data Quality Outcome (Current Tested Run)\b0\par
+\pard 1. Rows after cleaning: **1151**\par
+\pard 2. Footer rows removed: **34**\par
+\pard 3. Key derived columns (`Date`, `year`, `month_num`, `day_of_week`, `hour`, `minute`, `D/N`) available without nulls in tested run.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 7. SYSTEM ARCHITECTURE\b0\fs22\par
+\par
+\pard The application consists of four major user modules and one shared backend layer.\par
+\par
+\pard\sa120\b 7.1 User Modules\b0\par
+\pard 1. **Home:** summary, KPIs, quick navigation.\par
+\pard 2. **Data Manager:** upload/version selection, validation, cleaned view.\par
+\pard 3. **Dashboard:** filter-driven maps/charts/hotspots.\par
+\pard 4. **Model Training & Prediction:** model benchmarking, severity risk prediction, hotspot forecasting.\par
+\par
+\pard\sa120\b 7.2 Backend Components\b0\par
+\pard 1. `cleaning.py` – data transformation and feature derivation.\par
+\pard 2. `modeling.py` – model training, evaluation, best-model persistence.\par
+\pard 3. `forecasting.py` – monthly recursive hotspot forecasting.\par
+\pard 4. `viz.py`/`ui.py` – visualization and theme system.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 8. METHODOLOGY\b0\fs22\par
+\par
+\pard\sa120\b 8.1 Severity Prediction Workflow\b0\par
+\pard 1. Select features from cleaned dataset.\par
+\pard 2. Split train/test with stratification.\par
+\pard 3. Build preprocessing + model pipelines.\par
+\pard 4. Evaluate using CV and hold-out metrics.\par
+\pard 5. Save best model for inference in Prediction Studio.\par
+\par
+\pard\sa120\b 8.2 Models Evaluated\b0\par
+\pard 1. RandomForestClassifier\par
+\pard 2. XGBoostClassifier\par
+\pard 3. CatBoostClassifier\par
+\par
+\pard\sa120\b 8.3 Evaluation Metrics\b0\par
+\pard 1. Accuracy\par
+\pard 2. Macro-F1\par
+\pard 3. Macro-Recall\par
+\pard 4. Confusion Matrix\par
+\par
+\pard\sa120\b 8.4 Hotspot Forecasting Method\b0\par
+\pard 1. Aggregate monthly accident counts per jurisdiction.\par
+\pard 2. Create continuous month timelines (missing months filled with 0).\par
+\pard 3. Generate lag and seasonality features:\par
+\pard    - lag_1, lag_2, lag_3\par
+\pard    - rolling_3\par
+\pard    - month sin/cos\par
+\pard    - trend index\par
+\pard 4. Train GradientBoostingRegressor.\par
+\pard 5. Forecast recursively for 60 months.\par
+\par
+\pard\sa120\b 8.5 Historical vs Predicted Comparison\b0\par
+\pard Hotspot page supports:\par
+\pard 1. **Historical (Actual Data):** rank by observed count for selected month-year.\par
+\pard 2. **Predicted (AI Forecast):** rank by model-estimated count/risk for selected period.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 9. IMPLEMENTATION DETAILS\b0\fs22\par
+\par
+\pard\sa120\b 9.1 Software Stack\b0\par
+\pard 1. Python 3.12\par
+\pard 2. Streamlit\par
+\pard 3. pandas, numpy\par
+\pard 4. scikit-learn\par
+\pard 5. xgboost, catboost\par
+\pard 6. plotly\par
+\par
+\pard\sa120\b 9.2 Deployment Pattern\b0\par
+\pard Local-first app, with potential free hosting on Streamlit Community Cloud/Hugging Face Spaces.\par
+\par
+\pard\sa120\b 9.3 User Experience Features\b0\par
+\pard 1. Sidebar filters with clear/reset behavior.\par
+\pard 2. Theme adaptability and appearance controls.\par
+\pard 3. Readable labels for non-technical users.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 10. RESULTS AND DISCUSSION\b0\fs22\par
+\par
+\pard\sa120\b 10.1 Severity Model Metrics (Latest Run)\b0\par
+\par
+\pard | Model | CV Macro-F1 | Test Accuracy | Test Macro-F1 | Test Macro-Recall |\par
+\pard |---|---:|---:|---:|---:|\par
+\pard | XGBoost | 0.3412 | 0.7273 | 0.3821 | 0.3779 |\par
+\pard | CatBoost | 0.2942 | 0.7619 | 0.3282 | 0.3518 |\par
+\pard | RandomForest | 0.2928 | 0.7532 | 0.3070 | 0.3388 |\par
+\par
+\pard **Inference:** XGBoost selected as best model based on macro-F1.\par
+\par
+\pard\sa120\b 10.2 Historical Validation Example\b0\par
+\pard For March 2022 historical ranking (actual data), top jurisdictions include:\par
+\pard 1. Chadayamangalam\par
+\pard 2. Kottarakkara\par
+\pard 3. Venjarammood\par
+\par
+\pard\sa120\b 10.3 Forecast Interpretation\b0\par
+\pard Predicted rankings may not match a single historical snapshot because forecast reflects multi-year patterns and learned trend behavior. High-volume jurisdictions can remain top across multiple forecast months.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 11. CIVIL ENGINEERING INTERPRETATION\b0\fs22\par
+\par
+\pard The platform supports practical planning decisions:\par
+\pard 1. **Persistent hotspot detection** for corridor prioritization.\par
+\pard 2. **Temporal pattern analysis** (month/day/night) for enforcement scheduling.\par
+\pard 3. **Severity-risk interpretation** under different geometry and junction contexts.\par
+\pard 4. **Infrastructure intervention planning**:\par
+\pard    - shoulder and median treatment\par
+\pard    - junction redesign\par
+\pard    - night-visibility improvement\par
+\pard    - signage and speed management\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 12. VALIDATION, RELIABILITY, AND ERROR ANALYSIS\b0\fs22\par
+\par
+\pard\sa120\b 12.1 Data Reliability\b0\par
+\pard Input inconsistencies are reduced by deterministic preprocessing rules and fallback reconstruction logic.\par
+\par
+\pard\sa120\b 12.2 Model Reliability\b0\par
+\pard Cross-validation and hold-out evaluation used for severity model comparison.\par
+\par
+\pard\sa120\b 12.3 Forecast Reliability Notes\b0\par
+\pard 1. Forecast is univariate-plus-seasonality and trend-based.\par
+\pard 2. External factors are not yet included; interpret as planning guidance, not deterministic truth.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 13. LIMITATIONS\b0\fs22\par
+\par
+\pard 1. No explicit traffic exposure variables (AADT/volume).\par
+\pard 2. No weather/rainfall/external event covariates.\par
+\pard 3. No uncertainty bands shown for forecast output.\par
+\pard 4. Jurisdiction-level aggregation may hide micro blackspots.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 14. CONCLUSION\b0\fs22\par
+\par
+\pard An end-to-end AI platform was developed for road safety analytics and prediction in civil engineering context. The workflow resolves practical data-quality challenges and provides actionable outputs through dashboard, severity prediction, and 5-year hotspot forecasting. Historical-vs-predicted comparison enhances interpretability and decision confidence for planning agencies.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 15. FUTURE SCOPE\b0\fs22\par
+\par
+\pard 1. Add external covariates (weather, traffic flow, speed).\par
+\pard 2. Add explainability modules (SHAP/LIME).\par
+\pard 3. Add forecast confidence intervals.\par
+\pard 4. Integrate GIS road class and geometric descriptors.\par
+\pard 5. Extend to intervention recommendation optimization.\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 16. REFERENCES (IEEE STYLE)\b0\fs22\par
+\par
+\pard [1] World Health Organization, *Global Status Report on Road Safety*, Geneva, Switzerland, latest ed.\par
+\pard [2] Ministry of Road Transport and Highways, Government of India, *Road Accidents in India*, latest annual report.\par
+\pard [3] T. Chen and C. Guestrin, "XGBoost: A Scalable Tree Boosting System," in *Proc. KDD*, 2016.\par
+\pard [4] L. Breiman, "Random Forests," *Machine Learning*, vol. 45, no. 1, pp. 5-32, 2001.\par
+\pard [5] A. Dorogush, V. Ershov, and A. Gulin, "CatBoost: gradient boosting with categorical features support," 2018.\par
+\pard [6] Scikit-learn Documentation, https://scikit-learn.org\par
+\pard [7] Streamlit Documentation, https://docs.streamlit.io\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 17. FIGURE PLACEHOLDERS\b0\fs22\par
+\par
+\pard **Fig. 1.** Overall system architecture flowchart\par
+\pard **Fig. 2.** Data Manager page (upload/version/validation)\par
+\pard **Fig. 3.** Dashboard with sidebar filters\par
+\pard **Fig. 4.** Accident map (filtered view)\par
+\pard **Fig. 5.** Month-wise severity trend\par
+\pard **Fig. 6.** Severity distribution chart\par
+\pard **Fig. 7.** Model training leaderboard\par
+\pard **Fig. 8.** Best model confusion matrix\par
+\pard **Fig. 9.** Single scenario severity prediction\par
+\pard **Fig. 10.** Hotspot forecast (Predicted mode)\par
+\pard **Fig. 11.** Hotspot ranking (Historical mode)\par
+\pard **Fig. 12.** Jurisdiction trend comparison chart\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 18. TABLE PLACEHOLDERS\b0\fs22\par
+\par
+\pard\sa120\b Table 1. Dataset Fields and Description\b0\par
+\pard | Sl. No. | Field | Description |\par
+\pard |---|---|---|\par
+\pard | 1 | Jurisdiction/Place | Administrative corridor jurisdiction |\par
+\pard | 2 | Date/Time | Accident timestamp |\par
+\pard | 3 | D/N | Day-night classification |\par
+\pard | 4 | Collision fields | Pattern and type details |\par
+\pard | 5 | Vehicle fields | Involved vehicle class codes |\par
+\pard | 6 | Severity fields | Fatal, grievous, minor indicators |\par
+\pard | 7 | Infra fields | Geometry, median, shoulder, footpath, junction |\par
+\pard | 8 | Coordinates | Latitude and Longitude |\par
+\par
+\pard\sa120\b Table 2. Data Cleaning Rules\b0\par
+\pard | Rule ID | Raw Issue | Action |\par
+\pard |---|---|---|\par
+\pard | R1 | Header mismatch | Canonicalization |\par
+\pard | R2 | Mixed dates | Multi-pass parsing + fallback |\par
+\pard | R3 | Mixed times | Decimal/time parsing |\par
+\pard | R4 | D/N variants | Normalization to D/N |\par
+\pard | R5 | Footer rows | Pattern-based removal |\par
+\pard | R6 | Missing values | Median/Mode filling |\par
+\par
+\pard\sa120\b Table 3. Model Comparison (Filled)\b0\par
+\pard | Model | CV Macro-F1 | Test Accuracy | Test Macro-F1 | Test Macro-Recall |\par
+\pard |---|---:|---:|---:|---:|\par
+\pard | XGBoost | 0.3412 | 0.7273 | 0.3821 | 0.3779 |\par
+\pard | CatBoost | 0.2942 | 0.7619 | 0.3282 | 0.3518 |\par
+\pard | RandomForest | 0.2928 | 0.7532 | 0.3070 | 0.3388 |\par
+\par
+\pard\sa120\b Table 4. Historical vs Predicted Hotspot Snapshot\b0\par
+\pard | Year-Month | Source | Top Jurisdiction | Value |\par
+\pard |---|---|---|---:|\par
+\pard | 2022-03 | Historical | Chadayamangalam | `<actual_count>` |\par
+\pard | 2025-10 | Predicted | `<jurisdiction>` | `<predicted_count>` |\par
+\par
+\pard\sa120\b Table 5. Hardware and Software Requirements\b0\par
+\pard | Item | Specification |\par
+\pard |---|---|\par
+\pard | CPU | Intel i5 / Ryzen 5 or above |\par
+\pard | RAM | 8 GB minimum (16 GB recommended) |\par
+\pard | OS | Windows 10/11 |\par
+\pard | Python | 3.12 |\par
+\pard | Libraries | Streamlit, pandas, numpy, scikit-learn, xgboost, catboost, plotly |\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 19. APPENDIX A: USER MANUAL\b0\fs22\par
+\par
+\pard 1. Open Data Manager and upload/select active dataset.\par
+\pard 2. Review validation and cleaned preview.\par
+\pard 3. Open Dashboard and apply filters (place/year/month/day/night/etc.).\par
+\pard 4. Train models in Model Training page.\par
+\pard 5. Use Prediction Studio:\par
+\pard    - Severity AI Prediction\par
+\pard    - Hotspot Forecast (Historical/Predicted)\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 20. APPENDIX B: REPRODUCIBILITY COMMANDS\b0\fs22\par
+\par
+\pard ```powershell\par
+\pard cd accident_ai\par
+\pard python -m venv .venv\par
+\pard .\\.venv\\Scripts\\Activate.ps1\par
+\pard python -m pip install -r requirements.txt\par
+\pard python -m streamlit run app.py\par
+\pard ```\par
+\par
+\pard ---\par
+\par
+\pard\qc\sa180\b\fs28 21. FINAL SUBMISSION CHECKLIST\b0\fs22\par
+\par
+\pard 1. Replace placeholders:\par
+\pard    - `[YOUR NAME]`\par
+\pard    - `[YOUR REGISTER NUMBER]`\par
+\pard    - `[COLLEGE NAME]`, `[UNIVERSITY NAME]`\par
+\pard    - `[GUIDE NAME]`, `[DESIGNATION]`\par
+\pard    - `[20XX-20XX]`\par
+\pard 2. Insert all figure screenshots with captions.\par
+\pard 3. Verify table numbering and pagination.\par
+\pard 4. Ensure reference style is IEEE.\par
+\pard 5. Export to PDF after final proofreading.\par
+}

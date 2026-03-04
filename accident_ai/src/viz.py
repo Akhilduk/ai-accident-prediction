@@ -3,15 +3,22 @@ from __future__ import annotations
 import pandas as pd
 import plotly.express as px
 
+from src.ui import style_plotly
+
 
 def plot_severity(df: pd.DataFrame):
-    return px.pie(df, names="severity_target", hole=0.5, title="Severity Distribution")
+    fig = px.pie(df, names="severity_target", hole=0.56, title="Severity Distribution")
+    fig.update_traces(textposition="inside", textinfo="percent+label")
+    return style_plotly(fig)
 
 
 def plot_monthly(df: pd.DataFrame):
     g = df.groupby(["year", "month_num", "severity_target"]).size().reset_index(name="count")
-    g["period"] = g["year"].astype(str) + "-" + g["month_num"].astype(int).astype(str).str.zfill(2)
-    return px.bar(g, x="period", y="count", color="severity_target", title="Month-wise Severity Split")
+    g = g.sort_values(["year", "month_num"])
+    g["period"] = pd.to_datetime(dict(year=g["year"].astype(int), month=g["month_num"].astype(int), day=1))
+    fig = px.line(g, x="period", y="count", color="severity_target", markers=True, title="Month-wise Severity Trend")
+    fig.update_xaxes(tickformat="%Y-%m", tickangle=-35, nticks=12)
+    return style_plotly(fig)
 
 
 def plot_top_hotspots(df: pd.DataFrame):

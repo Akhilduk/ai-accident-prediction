@@ -1,0 +1,7 @@
+.venv/
+venv/
+accident_ai/.venv/
+__pycache__/
+*.pyc
+catboost_info/
+accident_ai/catboost_info/
