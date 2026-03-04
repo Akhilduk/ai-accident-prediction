@@ -84,6 +84,37 @@ with st.expander("Technical Words in Simple Language", expanded=False):
 """
     )
 
+st.markdown("### Training Speed Options")
+c1, c2, c3 = st.columns(3)
+with c1:
+    run_mode = st.selectbox(
+        "Mode",
+        ["Fast (Recommended on Cloud)", "Balanced", "Full Accuracy"],
+        index=0,
+        help="Fast mode is best for Streamlit Cloud. Full Accuracy is slower but gives strongest benchmarking.",
+    )
+with c2:
+    cv_splits = st.selectbox(
+        "Cross-validation folds",
+        [3, 4, 5],
+        index=0 if run_mode == "Fast (Recommended on Cloud)" else (1 if run_mode == "Balanced" else 2),
+    )
+with c3:
+    sample_frac = st.selectbox(
+        "Data used for training",
+        [0.6, 0.8, 1.0],
+        index=0 if run_mode == "Fast (Recommended on Cloud)" else (1 if run_mode == "Balanced" else 2),
+        format_func=lambda x: f"{int(x * 100)}%",
+    )
+
+fast_mode = run_mode != "Full Accuracy"
+estimated_note = (
+    "Expected runtime: about 1-3 minutes on cloud."
+    if run_mode == "Fast (Recommended on Cloud)"
+    else ("Expected runtime: about 3-6 minutes on cloud." if run_mode == "Balanced" else "Expected runtime: can be slow on cloud.")
+)
+st.caption(f"{estimated_note} Local machine is usually much faster due to stronger CPU and less shared load.")
+
 
 
 with st.expander("How training calculations are done (simple + technical)", expanded=False):
@@ -95,8 +126,8 @@ with st.expander("How training calculations are done (simple + technical)", expa
 3. Preprocessing:
    - Numeric columns -> missing values replaced by **median**.
    - Text columns -> missing values replaced by **most frequent value**, then one-hot encoded.
-4. Models trained: RandomForest, XGBoost (if installed), CatBoost (if installed).
-5. Cross-validation: 5 folds on training set using Macro-F1.
+4. Models trained: RandomForest, XGBoost (if installed), CatBoost (only if enabled).
+5. Cross-validation: selected folds (3/4/5) on training set using Macro-F1.
 6. Best model is selected by sorting leaderboard by `test_f1_macro`, then `cv_f1_macro_mean`.
 
 ### B) Metric formulas with numbers
@@ -127,8 +158,28 @@ Example row:
     )
 
 if st.button("Train All 3 Models", type="primary"):
-    with st.spinner("Training in progress..."):
-        leaderboard, report, best = train_and_compare(df, feature_cols)
+    progress_text = st.empty()
+    progress_bar = st.progress(0.0, text="Starting training...")
+    log_box = st.empty()
+    progress_logs: list[str] = []
+
+    def _progress(p: float, msg: str) -> None:
+        progress_bar.progress(float(p), text=msg)
+        progress_text.caption(f"Progress: {int(p * 100)}%")
+        progress_logs.append(msg)
+        log_box.caption("Current step: " + msg)
+
+    with st.spinner("Training in progress... Please wait."):
+        leaderboard, report, best = train_and_compare(
+            df,
+            feature_cols,
+            cv_splits=int(cv_splits),
+            sample_frac=float(sample_frac),
+            fast_mode=bool(fast_mode),
+            progress_callback=_progress,
+        )
+    progress_bar.progress(1.0, text="Training completed.")
+    progress_text.caption("Progress: 100%")
     st.success(f"Best model selected: {best}")
 
     view_leaderboard = leaderboard.copy()
