@@ -48,6 +48,25 @@ correlation_key_options = [
     "TYPE_OF_VEHICLE_1_LABEL",
     "TYPE_OF_VEHICLE_2_LABEL",
 ]
+friendly_factor_names = {
+    "Distance": "Road Segment Distance",
+    "NO. OF VEHICLE": "Number of Vehicles Involved",
+    "year": "Year",
+    "month_num": "Month",
+    "hour": "Hour of Day",
+    "is_weekend": "Weekend",
+    "is_night": "Night Time",
+    "day_night_label": "Day/Night",
+    "GEOMETRY": "Road Geometry",
+    "JN/NOT": "Junction Presence",
+    "PRESENCE OF MEDIAN": "Median Present",
+    "PRESENCE OF SHOULDER": "Shoulder Present",
+    "PRESENCE OF FOOTPATH": "Footpath Present",
+    "PATTERN_OF_COLLISION_LABEL": "Collision Pattern",
+    "TYPE_OF_COLLISION_LABEL": "Collision Type",
+    "TYPE_OF_VEHICLE_1_LABEL": "Primary Vehicle Type",
+    "TYPE_OF_VEHICLE_2_LABEL": "Secondary Vehicle Type",
+}
 
 for key, default in {
     "dash_place": [],
@@ -242,6 +261,7 @@ with t4:
         corr_df["severity_fatal"] = (f["severity_target"] == "Fatal").astype(int)
         corr_df["severity_grievous"] = (f["severity_target"] == "Grievous").astype(int)
         corr_df["severity_minor"] = (f["severity_target"] == "Minor").astype(int)
+        corr_df["severity_high"] = ((f["severity_target"] == "Fatal") | (f["severity_target"] == "Grievous")).astype(int)
 
         corr_method = st.session_state.get("dash_corr_method", "pearson")
         corr = corr_df.corr(method=corr_method, numeric_only=True).round(3)
@@ -249,9 +269,14 @@ with t4:
         st.plotly_chart(style_plotly(fig_corr), use_container_width=True)
 
         sev_col = st.selectbox(
-            "Show correlation with severity class",
-            ["severity_fatal", "severity_grievous", "severity_minor"],
-            format_func=lambda x: x.replace("severity_", "").title(),
+            "Find factors affecting",
+            ["severity_high", "severity_fatal", "severity_grievous", "severity_minor"],
+            format_func=lambda x: {
+                "severity_high": "High Severity (Fatal + Grievous)",
+                "severity_fatal": "Fatal",
+                "severity_grievous": "Grievous",
+                "severity_minor": "Minor",
+            }[x],
         )
         sev_corr = (
             corr[sev_col]
@@ -261,6 +286,13 @@ with t4:
             .reset_index()
             .rename(columns={"index": "key", sev_col: "correlation"})
         )
+        sev_corr["impact_direction"] = sev_corr["correlation"].apply(lambda v: "Increases with target" if v > 0 else "Decreases with target")
+        sev_corr["abs_correlation"] = sev_corr["correlation"].abs()
+        sev_corr["factor"] = sev_corr["key"].map(lambda k: friendly_factor_names.get(k, str(k).replace("_", " ").title()))
+        sev_corr["impact_level"] = sev_corr["abs_correlation"].apply(
+            lambda v: "High" if v >= 0.35 else ("Medium" if v >= 0.20 else "Low")
+        )
+
         st.plotly_chart(
             style_plotly(
                 px.bar(
@@ -272,4 +304,35 @@ with t4:
             ),
             use_container_width=True,
         )
-        st.dataframe(sev_corr, use_container_width=True, hide_index=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("**Top Risk-Increasing Factors**")
+            pos = sev_corr.sort_values("correlation", ascending=False).head(8)
+            st.dataframe(pos[["factor", "correlation"]], use_container_width=True, hide_index=True)
+        with c2:
+            st.markdown("**Top Risk-Reducing Factors**")
+            neg = sev_corr.sort_values("correlation", ascending=True).head(8)
+            st.dataframe(neg[["factor", "correlation"]], use_container_width=True, hide_index=True)
+
+        st.markdown("**Simple Explanation (For General Users)**")
+        top3 = sev_corr.sort_values("abs_correlation", ascending=False).head(3).copy()
+        if top3.empty:
+            st.info("Not enough variation to explain factors for selected filters.")
+        else:
+            for _, row in top3.iterrows():
+                direction = "higher chance" if row["correlation"] > 0 else "lower chance"
+                st.write(f"- **{row['factor']}** is linked with **{direction}** of selected severity (**{row['impact_level']} impact**).")
+        level_counts = sev_corr["impact_level"].value_counts()
+        st.write(
+            f"Impact summary: High = {int(level_counts.get('High', 0))}, "
+            f"Medium = {int(level_counts.get('Medium', 0))}, "
+            f"Low = {int(level_counts.get('Low', 0))}"
+        )
+        st.caption(
+            "This shows association, not strict cause-and-effect. Use it as planning guidance with field verification."
+        )
+        st.dataframe(
+            sev_corr[["factor", "impact_level", "correlation", "abs_correlation", "impact_direction"]],
+            use_container_width=True,
+            hide_index=True,
+        )
