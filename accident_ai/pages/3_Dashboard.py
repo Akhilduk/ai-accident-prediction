@@ -9,7 +9,7 @@ from src.viz import plot_monthly, plot_severity, plot_top_hotspots
 
 apply_theme(
     "Analytics Dashboard",
-    icon="📊",
+    icon="DASHBOARD",
     subtitle="Use the sidebar filters to update charts instantly.",
 )
 
@@ -468,3 +468,4 @@ with t4:
                     use_container_width=True,
                     hide_index=True,
                 )
+

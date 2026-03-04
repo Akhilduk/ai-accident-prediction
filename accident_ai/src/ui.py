@@ -3,6 +3,27 @@ from __future__ import annotations
 import streamlit as st
 
 
+def _resolve_icon(icon: str) -> str:
+    icon_map = {
+        "AI": "smart_toy",
+        "HOME": "home",
+        "DATA": "dataset",
+        "DASHBOARD": "dashboard",
+        "MODEL": "neurology",
+        "PREDICT": "query_stats",
+        "TRAIN": "model_training",
+        "UPLOAD": "upload_file",
+        "MANAGER": "folder_managed",
+        "ANALYTICS": "analytics",
+    }
+    token = str(icon or "AI").strip().upper()
+    if token in icon_map:
+        return f"<span class='material-symbols-rounded hero-icon' aria-hidden='true'>{icon_map[token]}</span>"
+    if token.isalpha():
+        return f"<span class='material-symbols-rounded hero-icon' aria-hidden='true'>auto_awesome</span>"
+    return f"<span class='hero-fallback-icon' aria-hidden='true'>{icon}</span>"
+
+
 def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) -> None:
     if "ui_theme_mode" not in st.session_state:
         st.session_state["ui_theme_mode"] = "Auto"
@@ -51,6 +72,7 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
     css = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0');
     html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
     :root {
         --brand-1: __PRIMARY__;
@@ -63,6 +85,7 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
         --text-muted: __TEXT_MUTED__;
         --button-bg: __BUTTON_BG__;
         --button-text: __BUTTON_TEXT__;
+        --focus-ring: rgba(19, 160, 136, 0.45);
     }
 
     .stApp, [data-testid="stAppViewContainer"] {
@@ -78,10 +101,11 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
     [data-testid="stHeader"], header {
         background: transparent !important;
     }
+    [data-testid="stToolbar"] { right: 0.7rem !important; }
     .block-container {
-        padding-top: 4.2rem !important;
+        padding-top: 5.2rem !important;
         padding-bottom: 1.6rem;
-        max-width: 1200px;
+        max-width: 1240px;
     }
     .stMarkdown, .stMarkdown p, .stCaption, h1, h2, h3, h4, h5, h6, label {
         color: var(--text-main) !important;
@@ -95,12 +119,46 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
         padding: 1.1rem 1.2rem;
         border: 1px solid rgba(255,255,255,0.20);
         box-shadow: 0 12px 34px rgba(17, 53, 87, 0.22);
-        animation: rise 0.45s ease-out;
-        margin-bottom: 0.9rem;
+        animation: rise 0.45s ease-out, glowPulse 4s ease-in-out infinite;
+        margin: 0.15rem 0 0.95rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(115deg, transparent 10%, rgba(255,255,255,0.22) 40%, transparent 60%);
+        transform: translateX(-120%);
+        animation: shimmer 3.6s ease-in-out infinite;
+        pointer-events: none;
     }
     .hero h1, .hero p { color: white !important; margin: 0; }
     .hero h1 { margin-bottom: 0.26rem; font-size: clamp(1.25rem, 2vw, 2rem); line-height: 1.2; }
     .hero p { opacity: 0.95; font-weight: 600; }
+    .hero-title {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+    .hero-icon {
+        font-family: 'Material Symbols Rounded';
+        font-size: clamp(1.35rem, 2vw, 1.9rem);
+        line-height: 1;
+        color: rgba(255,255,255,0.98);
+        font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+    }
+    .hero-fallback-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.5rem;
+        min-height: 1.5rem;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.2);
+        font-weight: 800;
+        font-size: 0.9rem;
+    }
 
     .glass-card {
         background: var(--panel-bg);
@@ -110,14 +168,26 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
         backdrop-filter: blur(8px);
         animation: rise 0.45s ease-out;
         color: var(--text-main) !important;
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     }
     .glass-card * { color: var(--text-main) !important; }
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(9, 24, 47, 0.20);
+        border-color: color-mix(in srgb, var(--panel-border) 75%, var(--brand-1) 25%);
+    }
 
     .stMetric, [data-testid="stMetric"], [data-testid="metric-container"] {
         background: var(--panel-bg) !important;
         border: 1px solid var(--panel-border) !important;
         border-radius: 14px;
         padding: 0.45rem 0.5rem;
+        box-shadow: 0 6px 16px rgba(9, 24, 47, 0.08);
+        transition: transform 180ms ease, border-color 180ms ease;
+    }
+    .stMetric:hover, [data-testid="metric-container"]:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--panel-border) 72%, var(--brand-2) 28%) !important;
     }
     [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
         color: var(--text-main) !important;
@@ -132,10 +202,17 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
         padding: 0.35rem 0.95rem;
         font-weight: 700;
         color: var(--text-main) !important;
+        transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(9, 24, 47, 0.16);
     }
     .stTabs [aria-selected="true"] {
         background: linear-gradient(120deg, var(--brand-1), var(--brand-2));
         color: white !important;
+        border-color: transparent !important;
+        box-shadow: 0 8px 18px rgba(9, 24, 47, 0.24);
     }
 
     .stButton > button, .stDownloadButton > button {
@@ -146,10 +223,17 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
         font-weight: 700 !important;
         min-height: 2.55rem !important;
         padding: 0.4rem 0.9rem !important;
+        box-shadow: 0 8px 18px rgba(9, 24, 47, 0.12);
+        transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
     }
     .stButton > button:hover, .stDownloadButton > button:hover {
         border-color: rgba(19, 160, 136, 0.55) !important;
-        transform: translateY(-1px);
+        transform: translateY(-1px) scale(1.01);
+        box-shadow: 0 10px 20px rgba(9, 24, 47, 0.18);
+    }
+    .stButton > button:focus, .stDownloadButton > button:focus {
+        outline: none !important;
+        box-shadow: 0 0 0 0.2rem var(--focus-ring) !important;
     }
     .stButton > button[kind="primary"], .stForm [data-testid="stFormSubmitButton"] > button {
         background: linear-gradient(120deg, var(--brand-1), var(--brand-2)) !important;
@@ -162,6 +246,43 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
         color: var(--text-main) !important;
     }
     .stSelectbox, .stMultiSelect, .stDateInput { margin-bottom: 0.38rem; }
+    [data-baseweb="select"] > div, .stDateInput > div > div,
+    [data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stNumberInput"] input {
+        background: color-mix(in srgb, var(--panel-bg) 92%, transparent 8%) !important;
+        border: 1px solid var(--panel-border) !important;
+        border-radius: 11px !important;
+        min-height: 2.5rem;
+        color: var(--text-main) !important;
+    }
+    [data-baseweb="select"] > div:focus-within, .stDateInput > div > div:focus-within,
+    [data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus, [data-testid="stNumberInput"] input:focus {
+        box-shadow: 0 0 0 0.2rem var(--focus-ring) !important;
+        border-color: color-mix(in srgb, var(--brand-2) 65%, var(--panel-border) 35%) !important;
+    }
+
+    [data-testid="stDataFrame"], [data-testid="stTable"] {
+        border: 1px solid var(--panel-border) !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+        background: var(--panel-bg) !important;
+    }
+    [data-testid="stDataFrame"] * {
+        color: var(--text-main) !important;
+    }
+
+    [data-testid="stExpander"] details {
+        background: var(--panel-bg) !important;
+        border: 1px solid var(--panel-border) !important;
+        border-radius: 14px !important;
+    }
+    [data-testid="stExpander"] summary {
+        font-weight: 700 !important;
+        color: var(--text-main) !important;
+    }
+    [data-testid="stAlert"] {
+        border-radius: 12px !important;
+        border: 1px solid var(--panel-border) !important;
+    }
 
     html[data-theme="dark"] .glass-card,
     body[data-theme="dark"] .glass-card,
@@ -181,21 +302,37 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
     body[data-theme="dark"] [data-testid="stMetricLabel"] {
         color: #e8eef7 !important;
     }
+    html[data-theme="dark"] [data-testid="stDataFrame"],
+    body[data-theme="dark"] [data-testid="stDataFrame"],
+    html[data-theme="dark"] [data-testid="stTable"],
+    body[data-theme="dark"] [data-testid="stTable"] {
+        background: rgba(22, 30, 43, 0.92) !important;
+        border-color: rgba(117, 161, 207, 0.30) !important;
+    }
 
     @keyframes rise {
         from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
     }
+    @keyframes shimmer {
+        0% { transform: translateX(-120%); }
+        55% { transform: translateX(120%); }
+        100% { transform: translateX(120%); }
+    }
+    @keyframes glowPulse {
+        0%, 100% { box-shadow: 0 12px 34px rgba(17, 53, 87, 0.22); }
+        50% { box-shadow: 0 14px 38px rgba(17, 53, 87, 0.30); }
+    }
     @media (max-width: 1024px) {
         .block-container {
-            padding-top: 4.5rem !important;
+            padding-top: 5.6rem !important;
             padding-left: 0.9rem;
             padding-right: 0.9rem;
         }
     }
     @media (max-width: 680px) {
         .block-container {
-            padding-top: 4.8rem !important;
+            padding-top: 6rem !important;
             padding-left: 0.72rem;
             padding-right: 0.72rem;
         }
@@ -217,10 +354,11 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
     st.markdown(css, unsafe_allow_html=True)
 
     subtitle_html = f"<p>{subtitle}</p>" if subtitle else ""
+    icon_html = _resolve_icon(icon)
     st.markdown(
         f"""
         <section class="hero">
-            <h1>{icon} {page_title}</h1>
+            <h1 class="hero-title">{icon_html}<span>{page_title}</span></h1>
             {subtitle_html}
         </section>
         """,
@@ -229,7 +367,15 @@ def apply_theme(page_title: str, icon: str = "AI", subtitle: str | None = None) 
 
 
 def style_plotly(fig):
-    template = "plotly_dark" if (st.get_option("theme.base") or "light") == "dark" else "plotly_white"
+    base = st.get_option("theme.base") or "light"
+    mode = st.session_state.get("ui_theme_mode", "Auto")
+    if mode == "Dark":
+        is_dark = True
+    elif mode == "Light":
+        is_dark = False
+    else:
+        is_dark = base == "dark"
+    template = "plotly_dark" if is_dark else "plotly_white"
     fig.update_layout(
         template=template,
         paper_bgcolor="rgba(0,0,0,0)",

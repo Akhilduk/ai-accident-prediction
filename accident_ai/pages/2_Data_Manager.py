@@ -16,7 +16,7 @@ from src.ui import apply_theme
 
 apply_theme(
     "Data Upload & Manager",
-    icon="🗂️",
+    icon="DATA",
     subtitle="Upload versions, set active dataset, and maintain master reference codes.",
 )
 
@@ -100,3 +100,4 @@ with c2:
     if st.button("Reset Master Reference to Default"):
         save_master_reference(DEFAULT_MASTER_REF_TABLES)
         st.success("Master reference reset to default values.")
+

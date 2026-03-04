@@ -69,7 +69,7 @@ def _historical_month_ranking(df_hist: pd.DataFrame, target_year: int, target_mo
 
 apply_theme(
     "Prediction Studio",
-    icon="🔮",
+    icon="PREDICT",
     subtitle="Simple AI predictions for incident severity and future hotspot ranking.",
 )
 
@@ -392,3 +392,4 @@ else:
                     style_plotly(px.line(trend, x="period", y="predicted_count", color=PLACE_LABEL, title="Forecast trend by jurisdiction")),
                     use_container_width=True,
                 )
+

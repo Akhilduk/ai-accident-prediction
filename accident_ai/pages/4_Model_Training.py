@@ -27,7 +27,7 @@ def _metric_line(name: str, value: float) -> str:
 
 apply_theme(
     "Model Training & Comparison",
-    icon="AI",
+    icon="MODEL",
     subtitle="Train 3 AI models, compare quality, and auto-save the best one for prediction.",
 )
 active = get_active_dataset()

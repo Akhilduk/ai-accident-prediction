@@ -6,7 +6,7 @@ st.set_page_config(page_title="Road Accident Analytics and Prediction", layout="
 
 apply_theme(
     "Road Accident Analytics and Prediction",
-    icon="AI",
+    icon="ANALYTICS",
     subtitle="A complete workflow for data cleaning, analytics dashboard, model training, and AI-based forecasting.",
 )
 

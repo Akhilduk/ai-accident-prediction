@@ -9,7 +9,7 @@ from src.viz import plot_top_hotspots
 
 apply_theme(
     "Road Safety Intelligence Portal",
-    icon="AI",
+    icon="HOME",
     subtitle="A simple platform to understand accident patterns, train models, and forecast high-risk areas.",
 )
 
