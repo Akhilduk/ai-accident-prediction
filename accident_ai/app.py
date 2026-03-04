@@ -33,3 +33,36 @@ with st.expander("Simple Guide (For First-Time Users)", expanded=False):
 - **Forecast**: Future estimate based on past data.
 """
     )
+
+with st.expander("Complete Non-Technical Glossary (Read Once)", expanded=False):
+    st.markdown(
+        """
+### Who is this app for?
+- **Traffic police / transport teams**: to identify risky places and patterns.
+- **Planning teams**: to decide where to add signals, lighting, medians, footpaths, or enforcement.
+- **General users**: to understand how accident patterns change by place, time, and road condition.
+
+### What is shown in each page?
+- **Data Manager**: Upload file, clean data, and define code meanings.
+- **Dashboard**: Visual analysis (map, trends, hotspots, factor relationships).
+- **Model Training**: Compare AI models and save the best one.
+- **Prediction**: Get severity probability and 5-year hotspot forecast.
+
+### Important words in simple language
+- **Feature / Factor**: Any input detail like month, road type, day/night, or vehicle type.
+- **Target**: The final output we want to predict (here: accident severity).
+- **Severity**:
+  - **Fatal** = death involved.
+  - **Serious Injury (Grievous)** = major injury.
+  - **Minor Injury** = less serious injury.
+- **Correlation**: How two things move together.
+  - Positive value: both tend to increase together.
+  - Negative value: one increases while other decreases.
+  - Near zero: weak/no clear relationship.
+- **Hotspot**: A place with relatively high accident count/risk.
+
+### What this system does *not* claim
+- It shows **pattern-based guidance**, not courtroom proof of cause.
+- Use results together with local checks (road inspection, traffic volume, weather, enforcement).
+"""
+    )

@@ -62,6 +62,21 @@ Use this page for a quick summary, then open **Dashboard** for deeper analysis.
 """
     )
 
+
+with st.expander("Detailed Meaning of Home Page Numbers", expanded=False):
+    st.markdown(
+        """
+- **Total Accidents** = number of rows in cleaned dataset.
+- **Fatal Count** = total of `FATAL` column.
+- **Serious Injury Count** = total of `GRIEVOUS` column.
+- **Minor Count** = total of `MINOR` column.
+- **Fatal Rate (%)** = `(Fatal Count / Total Accidents) × 100`.
+- **Top Hotspot** = place with highest accident frequency in current active data.
+
+**Why this matters:** these six cards provide a quick health check before you go into detailed charts.
+"""
+    )
+
 t1, t2 = st.tabs(["What You Can Do", "Navigate"])
 
 with t1:

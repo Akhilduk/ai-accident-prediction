@@ -101,6 +101,37 @@ Choose one section:
 """
     )
 
+
+
+with st.expander("How prediction and forecast numbers are calculated", expanded=False):
+    st.markdown(
+        """
+### Severity AI Prediction section
+- Inputs (place, day/night, geometry, collision type, etc.) are converted into model-ready format.
+- Model returns probability for each class (Fatal / Serious Injury / Minor).
+- **Most likely outcome** = class with highest probability.
+- In Area Risk Explorer:
+  - App predicts many matching records together.
+  - Shows average class probability.
+  - **High Severity Risk** = probability(Fatal) + probability(Serious Injury).
+
+### Hotspot Forecast section
+- Historical monthly count is built per place.
+- Lag features are created (`lag_1`, `lag_2`, `lag_3`, rolling average, trend index, month seasonality).
+- Gradient Boosting model predicts future monthly counts up to 5 years.
+- Ranking is sorted by predicted count for selected year/month.
+
+### Exact-date risk logic
+- Monthly prediction is converted to daily base: `monthly_pred / days_in_month`.
+- It is adjusted using historical weekday pattern for that place.
+- Final score shown as **predicted_daily_risk** (relative risk-style indicator for comparison across places).
+
+### Axis meaning in prediction charts
+- Bar charts: **X-axis = severity/place**, **Y-axis = probability/risk/count**.
+- Trend charts: **X-axis = month-year period**, **Y-axis = actual or predicted count**.
+"""
+    )
+
 if section == "Severity AI Prediction":
     model_bundle = load_best_model()
     if model_bundle is None:
