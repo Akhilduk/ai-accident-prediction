@@ -37,32 +37,30 @@ with st.expander("Simple Guide (For First-Time Users)", expanded=False):
 with st.expander("Complete Non-Technical Glossary (Read Once)", expanded=False):
     st.markdown(
         """
-### Who is this app for?
-- **Traffic police / transport teams**: to identify risky places and patterns.
-- **Planning teams**: to decide where to add signals, lighting, medians, footpaths, or enforcement.
-- **General users**: to understand how accident patterns change by place, time, and road condition.
+### Who should use this portal?
+- **Police / enforcement**: identify priority risky stretches.
+- **Road engineers**: see what road conditions are linked with severe outcomes.
+- **Policy teams**: prioritize interventions by data evidence.
+- **General public users**: understand what, where, and when accident risk is high.
 
-### What is shown in each page?
-- **Data Manager**: Upload file, clean data, and define code meanings.
-- **Dashboard**: Visual analysis (map, trends, hotspots, factor relationships).
-- **Model Training**: Compare AI models and save the best one.
-- **Prediction**: Get severity probability and 5-year hotspot forecast.
+### What each page does in one line
+- **Data Manager**: upload + validate + clean + code mapping.
+- **Dashboard**: filtered visual analysis and factor relationships.
+- **Model Training**: compare algorithms and save best model.
+- **Prediction**: severity probabilities and future hotspot ranking.
 
-### Important words in simple language
-- **Feature / Factor**: Any input detail like month, road type, day/night, or vehicle type.
-- **Target**: The final output we want to predict (here: accident severity).
-- **Severity**:
-  - **Fatal** = death involved.
-  - **Serious Injury (Grievous)** = major injury.
-  - **Minor Injury** = less serious injury.
-- **Correlation**: How two things move together.
-  - Positive value: both tend to increase together.
-  - Negative value: one increases while other decreases.
-  - Near zero: weak/no clear relationship.
-- **Hotspot**: A place with relatively high accident count/risk.
+### Simple dictionary of technical words
+- **Feature/Factor**: an input field used for analysis (month, geometry, day/night, etc.).
+- **Target**: output to predict (severity class).
+- **Correlation**: relationship score between two fields from -1 to +1.
+- **Matrix**: table where both rows and columns are factors and cells contain relationship value.
+- **Forecast**: future estimate built from historical pattern.
+- **Probability**: chance of each possible outcome (0 to 1 or 0% to 100%).
+- **Model**: algorithm trained to learn past patterns.
 
-### What this system does *not* claim
-- It shows **pattern-based guidance**, not courtroom proof of cause.
-- Use results together with local checks (road inspection, traffic volume, weather, enforcement).
+### Important warning for all pages
+- The app shows **data relationships** and **risk indications**.
+- It does **not** prove legal cause-and-effect by itself.
+- Always combine with field inspection, traffic counts, and local expert judgement.
 """
     )

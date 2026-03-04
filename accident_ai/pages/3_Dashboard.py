@@ -43,42 +43,73 @@ with st.expander("How to Use This Dashboard (Simple)", expanded=False):
 with st.expander("How to read X-axis, Y-axis, matrix, and severity logic", expanded=False):
     st.markdown(
         """
-### Chart axis meaning (general rule)
-- **X-axis** usually shows category or time (month, place, collision type, etc.).
-- **Y-axis** usually shows count, rate, or correlation value.
-- In map charts: latitude/longitude are location coordinates; color/size show severity or risk level.
+### 1) How to read every chart on this page
+- **Map (scatter map)**
+  - Latitude + Longitude place the point on map.
+  - Color shows severity category.
+  - Hover card shows FIR number, date, severity, and collision details.
+- **Month-wise Severity Trend (line/stacked chart)**
+  - **X-axis** = month number (`1` to `12`).
+  - **Y-axis** = number of accident records in that month.
+  - If one month bar/line is higher, that month had more accidents in selected filters.
+- **Severity Distribution chart**
+  - **X-axis** = severity class (Fatal / Serious Injury / Minor).
+  - **Y-axis** = count of accidents in each class.
+- **Collision Pattern / Collision Type bars**
+  - **X-axis** = pattern/type names.
+  - **Y-axis** = accident count.
+- **Vehicle-1 vs Vehicle-2 heatmap**
+  - **X-axis** = first vehicle type, **Y-axis** = second vehicle type.
+  - Cell color intensity = how often this pair appears.
+- **Junction vs Non-Junction grouped bar**
+  - **X-axis** = `JN/NOT` value.
+  - **Y-axis** = count.
+  - Color split = severity class.
+- **Top hotspot table**
+  - Sorted from highest accidents to lowest for current filters.
+  - First row is the highest-risk hotspot in this filtered view.
 
-### Correlation matrix: how it is formed
-1. User selects factors from sidebar.
-2. Non-numeric factors (example: road geometry) are converted to internal category codes so math can compare patterns.
-3. Extra severity flags are created:
-   - `severity_fatal` = 1 if Fatal else 0
-   - `severity_grievous` = 1 if Serious Injury else 0
-   - `severity_minor` = 1 if Minor else 0
-   - `severity_high` = 1 if Fatal or Serious Injury else 0
-4. Matrix values are computed using selected method:
-   - **Pearson** for linear relationship
-   - **Spearman** for rank-based relationship
+### 2) Correlation matrix: exact method used
+1. You select factors from sidebar (**Factors to compare**).
+2. If factor is text (like `GEOMETRY`), app converts it into internal category code numbers.
+3. App creates extra severity indicator columns:
+   - `severity_fatal` = 1 when class is Fatal else 0.
+   - `severity_grievous` = 1 when class is Serious Injury else 0.
+   - `severity_minor` = 1 when class is Minor else 0.
+   - `severity_high` = 1 when class is Fatal or Serious Injury else 0.
+4. Correlation is computed between all selected columns:
+   - **Pearson**: straight-line relationship.
+   - **Spearman**: rank/order relationship.
+5. Matrix cell value is from **-1 to +1**.
 
-### What matrix values represent
-- **+1**: very strong same-direction relation.
-- **0**: almost no relation.
-- **-1**: very strong opposite-direction relation.
-- Higher absolute value (`|value|`) means stronger relationship strength.
+### 3) How to interpret correlation value with numerical examples
+- `+0.62` => medium/strong positive relation (as factor grows, selected severity flag tends to increase).
+- `-0.41` => medium negative relation (as factor grows, selected severity flag tends to decrease).
+- `+0.03` => very weak relation (almost no pattern).
+- **Important:** correlation is **association**, not proof of cause.
 
-### How factors are identified as important
-- The app sorts factors by absolute correlation with selected severity target.
-- Then it labels impact level:
-  - **High** if `|correlation| >= 0.35`
-  - **Medium** if `|correlation| >= 0.20`
+### 4) How top factors are picked for severity
+- App takes selected severity target column (example: `severity_high`).
+- Sorts factors by absolute correlation `abs(correlation)` in descending order.
+- Impact level used in this page:
+  - **High** if `abs(correlation) >= 0.35`
+  - **Medium** if `abs(correlation) >= 0.20`
   - **Low** otherwise
-- Positive sign means risk increases with that factor pattern; negative sign means risk decreases.
+- Direction:
+  - Positive => "Increases with target"
+  - Negative => "Decreases with target"
 
-### Severity “reason” table (simple risk logic)
-For each factor group, it calculates:
-- **Target Rate** = `target_cases / total_records`
-- **Risk Score** = `target_rate × sqrt(total_records)`
-This balances both percentage and sample size, so very tiny groups do not dominate unfairly.
+### 5) "Why is severity high" section: formula used
+For each factor value/group:
+- **total_records** = number of records in that group
+- **target_cases** = number of selected severity cases in that group
+- **target_rate** = `target_cases / total_records`
+- **risk_score** = `target_rate * sqrt(total_records)`
+
+Example:
+- Group A: 25 severe out of 100 => `target_rate = 0.25`; `risk_score = 0.25 * 10 = 2.5`
+- Group B: 8 severe out of 16 => `target_rate = 0.50`; `risk_score = 0.50 * 4 = 2.0`
+Even though Group B has higher rate, Group A can rank higher because it has stronger sample support.
 """
     )
 

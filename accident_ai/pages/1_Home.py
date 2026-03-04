@@ -67,13 +67,20 @@ with st.expander("Detailed Meaning of Home Page Numbers", expanded=False):
     st.markdown(
         """
 - **Total Accidents** = number of rows in cleaned dataset.
-- **Fatal Count** = total of `FATAL` column.
-- **Serious Injury Count** = total of `GRIEVOUS` column.
-- **Minor Count** = total of `MINOR` column.
-- **Fatal Rate (%)** = `(Fatal Count / Total Accidents) × 100`.
+- **Fatal Count** = sum of `FATAL` column.
+- **Serious Injury Count** = sum of `GRIEVOUS` column.
+- **Minor Count** = sum of `MINOR` column.
+- **Fatal Rate (%)** = `(Fatal Count / Total Accidents) * 100`.
 - **Top Hotspot** = place with highest accident frequency in current active data.
 
-**Why this matters:** these six cards provide a quick health check before you go into detailed charts.
+### Numerical example
+If Total=1,200 and Fatal=96:
+- Fatal Rate = `(96 / 1200) * 100 = 8.0%`
+
+### How to read these KPI cards
+- They are quick summary cards.
+- Use them to compare data versions after upload.
+- If Fatal Rate rises while Total stays same, immediate safety review may be needed.
 """
     )
 

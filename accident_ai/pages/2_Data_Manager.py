@@ -50,19 +50,29 @@ with st.expander("Column Meaning and Cleaning Rules (Non-Technical)", expanded=F
 - **GEOMETRY**: road shape/type (straight, curve, etc.).
 - **PRESENCE OF MEDIAN / SHOULDER / FOOTPATH**: road infrastructure available (`yes/no`).
 - **JN/NOT**: junction or non-junction area.
-- **SEVERITY**: accident seriousness code.
+- **SEVERITY**: accident seriousness code (`F`, `G`, `M` etc.).
 
-### How cleaning is done
-1. Header names are standardized (small naming differences are normalized).
-2. Mixed date formats are parsed (including Excel serial dates).
-3. Month and day names are normalized.
-4. Time text is converted into hour/minute and a time bucket.
-5. Code columns are decoded using master reference tables.
-6. Missing numeric values are filled with median; missing text values with most common label.
-7. Severity code is converted to user-friendly class: Fatal / Grievous / Minor.
+### Data-cleaning steps with practical examples
+1. **Column normalization**: headers like `Type of Collision` and `TYPE OF COLLISION` are treated as same.
+2. **Date parsing**:
+   - Text formats like `16-03-2021`, `03/16/2021`, `2021-03-16` are parsed.
+   - Excel serial dates (example `45123`) are converted to real date.
+3. **Time parsing**:
+   - Values like `8.5` are interpreted as hour/minute style and converted.
+   - Time bucket created: `0-6`, `6-12`, `12-18`, `18-24`.
+4. **Code decoding**: numeric codes are converted into readable labels using master reference.
+5. **Missing values**:
+   - Numeric missing -> median fill.
+   - Text missing -> most frequent value fill.
+6. **Severity mapping**:
+   - `F -> Fatal`, `G -> Grievous (Serious Injury)`, `M -> Minor`.
+
+### Validation meaning
+- If required columns are missing, app stops with warning.
+- If valid, cleaned dataset is saved and used by Dashboard/Training/Prediction.
 
 ### Why master reference matters
-If your codebook says `3 = Rear End`, the app must know that mapping. This page is where you define/fix those mappings.
+If your source codebook says `3 = Rear End`, the app must know this mapping. Wrong mapping gives wrong analysis labels.
 """
     )
 
