@@ -103,6 +103,7 @@ if active:
         cleaned.to_csv(CLEANED_DATASET, index=False)
         st.success("Dataset validated and cleaned successfully.")
         st.caption(f"Footer/legend rows removed: {info['removed_footer_rows']}")
+        st.caption("Preview table shows first 20 cleaned rows used by Dashboard/Training/Prediction. Each row represents one accident record after standardization.")
         st.dataframe(cleaned.head(20), use_container_width=True)
 
 st.subheader("Master Reference Tables (Editable)")
@@ -115,6 +116,7 @@ for title in ["Pattern of Collision", "Type of Collision", "Type of Vehicle"]:
         base_df = pd.DataFrame({"Code": list(refs[title].keys()), "Label": list(refs[title].values())})
         if base_df.empty:
             base_df = pd.DataFrame({"Code": [None], "Label": [""]})
+        st.caption("Code is numeric source value, Label is readable name used in charts/tables. Edit carefully to keep meaning correct.")
         edited = st.data_editor(
             base_df,
             num_rows="dynamic",
@@ -140,4 +142,3 @@ with c2:
     if st.button("Reset Master Reference to Default"):
         save_master_reference(DEFAULT_MASTER_REF_TABLES)
         st.success("Master reference reset to default values.")
-

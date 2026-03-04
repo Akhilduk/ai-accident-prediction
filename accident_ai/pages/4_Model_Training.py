@@ -132,6 +132,7 @@ if st.button("Train All 3 Models", type="primary"):
     st.success(f"Best model selected: {best}")
 
     view_leaderboard = leaderboard.copy()
+    st.caption("Leaderboard table compares model quality. Higher test_f1_macro usually indicates better balanced performance across all severity classes.")
     st.dataframe(
         view_leaderboard.style.format(
             {
@@ -143,6 +144,7 @@ if st.button("Train All 3 Models", type="primary"):
         ),
         use_container_width=True,
     )
+    st.caption("Bar chart compares models using Macro-F1. Highest bar = best overall class-balanced model.")
     st.plotly_chart(
         style_plotly(px.bar(view_leaderboard, x="model", y="test_f1_macro", title="Model Comparison by Macro-F1 (Higher is better)")),
         use_container_width=True,
@@ -162,11 +164,15 @@ Use it to answer: **Which severity class is the model confusing most?**
         )
 
     for model_name, details in report.items():
+        if details.get("status") == "failed":
+            st.warning(f"{model_name} training failed and was skipped: {details.get('error', 'Unknown error')}")
+            continue
         st.subheader(f"{model_name} Confusion Matrix")
         labels = [_to_user_label(x) for x in details["labels"]]
         cm = pd.DataFrame(details["confusion_matrix"], index=labels, columns=labels)
         cm.index.name = "Actual"
         cm.columns.name = "Predicted"
+        st.caption("Confusion matrix: rows are actual class, columns are predicted class. Diagonal cells are correct predictions.")
         st.plotly_chart(style_plotly(px.imshow(cm, text_auto=True, title=f"Confusion Matrix - {model_name}")), use_container_width=True)
 
         m = details["metrics"]

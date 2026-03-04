@@ -263,6 +263,7 @@ t1, t2, t3, t4 = st.tabs(["Map & Severity Trend", "Collision Insights", "Hotspot
 
 with t1:
     st.markdown("#### Accident Map (Filtered Data)")
+    st.caption("Map points are accident locations (Latitude/Longitude). Color shows severity level. Use hover to see FIR, date, and collision details.")
     map_df = f.dropna(subset=["Latitude", "Longitude"]).copy()
     if map_df.empty:
         st.info("No geo points available for current filters.")
@@ -284,10 +285,12 @@ with t1:
     with c1:
         monthly_fig = plot_monthly(f)
         monthly_fig.update_layout(title="Month-wise Severity Trend (Filtered)")
+        st.caption("X-axis: month timeline. Y-axis: number of accidents. Each color line is a severity class. Higher line means more cases in that period.")
         st.plotly_chart(monthly_fig, use_container_width=True)
     with c2:
         severity_fig = plot_severity(f)
         severity_fig.update_layout(title="Severity Distribution (Filtered)")
+        st.caption("Pie chart share of each severity class. Percent is calculated as class_count / total_filtered_records * 100.")
         st.plotly_chart(severity_fig, use_container_width=True)
 
 with t2:
@@ -300,6 +303,7 @@ with t2:
             .sort_values("count", ascending=False)
             .head(15)
         )
+        st.caption("Top collision patterns by count. X-axis: pattern type. Y-axis: number of accidents for each pattern.")
         st.plotly_chart(
             style_plotly(px.bar(pattern, x="PATTERN_OF_COLLISION_LABEL", y="count", title="Top Collision Patterns (Filtered)")),
             use_container_width=True,
@@ -312,6 +316,7 @@ with t2:
             .sort_values("count", ascending=False)
             .head(15)
         )
+        st.caption("Top collision types by count. X-axis: collision type. Y-axis: number of accidents.")
         st.plotly_chart(
             style_plotly(px.bar(ctype, x="TYPE_OF_COLLISION_LABEL", y="count", title="Top Collision Types (Filtered)")),
             use_container_width=True,
@@ -324,6 +329,7 @@ with t2:
         .sort_values("count", ascending=False)
         .head(100)
     )
+    st.caption("Vehicle pair matrix. X-axis: primary vehicle, Y-axis: secondary vehicle. Darker cell means this pair appears more often.")
     st.plotly_chart(
         style_plotly(
             px.density_heatmap(
@@ -339,6 +345,7 @@ with t2:
 
     jn = f.groupby(["JN/NOT", "severity_target"]).size().reset_index(name="count")
     jn["severity_label"] = jn["severity_target"].map(lambda x: severity_label_map.get(str(x), str(x)))
+    st.caption("Junction analysis. X-axis: junction/non-junction. Y-axis: accident count. Colors split the count by severity level.")
     st.plotly_chart(
         style_plotly(px.bar(jn, x="JN/NOT", y="count", color="severity_label", barmode="group", title="Junction vs Non-Junction (Filtered)")),
         use_container_width=True,
@@ -347,6 +354,7 @@ with t2:
 with t3:
     st.markdown("#### Top 15 Hotspots (Filtered Data)")
     top_hotspots = plot_top_hotspots(f).head(15)
+    st.caption("Table is sorted by total accidents. 'fatal_rate' is calculated as fatal / total for each place.")
     st.dataframe(top_hotspots.rename(columns={place_col: place_label}), use_container_width=True, height=420)
 
 with t4:
@@ -368,6 +376,7 @@ with t4:
 
         corr_method = st.session_state.get("dash_corr_method", "pearson")
         corr = corr_df.corr(method=corr_method, numeric_only=True).round(3)
+        st.caption("Matrix values range from -1 to +1. Near +1: move together. Near -1: move opposite. Near 0: weak relation. This is association, not proof of cause.")
         fig_corr = px.imshow(corr, text_auto=True, aspect="auto", title=f"Feature Relationship Matrix ({corr_method.title()})")
         st.plotly_chart(style_plotly(fig_corr), use_container_width=True)
 
@@ -396,6 +405,7 @@ with t4:
             lambda v: "High" if v >= 0.35 else ("Medium" if v >= 0.20 else "Low")
         )
 
+        st.caption("This bar chart ranks factors by relationship strength with selected severity target. Higher absolute value means stronger relationship.")
         st.plotly_chart(
             style_plotly(
                 px.bar(
@@ -411,10 +421,12 @@ with t4:
         with c1:
             st.markdown("**Top Risk-Increasing Factors**")
             pos = sev_corr.sort_values("correlation", ascending=False).head(8)
+            st.caption("Factors with positive relation to selected severity.")
             st.dataframe(pos[["factor", "correlation"]], use_container_width=True, hide_index=True)
         with c2:
             st.markdown("**Top Risk-Reducing Factors**")
             neg = sev_corr.sort_values("correlation", ascending=True).head(8)
+            st.caption("Factors with negative relation to selected severity.")
             st.dataframe(neg[["factor", "correlation"]], use_container_width=True, hide_index=True)
 
         st.markdown("**Simple Explanation (For General Users)**")
@@ -488,7 +500,7 @@ with t4:
         for col in selected_factor_columns:
             g = (
                 f.assign(_target=target_flag.astype(int))
-                .groupby(col, dropna=False)
+                .groupby(col, dropna=False, observed=False)
                 .agg(total_records=("_target", "size"), target_cases=("_target", "sum"))
                 .reset_index()
             )
@@ -511,6 +523,7 @@ with t4:
                 hover_data=["total_records", "target_cases", "risk_score"],
             )
             fig.update_yaxes(title=f"Chance of {target_name}")
+            st.caption("Y-axis is target_rate = target_cases / total_records for that factor value. Color shade also follows this rate.")
             st.plotly_chart(style_plotly(fig), use_container_width=True)
 
         if not all_driver_rows:
@@ -528,6 +541,7 @@ with t4:
                 chance = float(row["target_rate"]) * 100
                 st.write(f"- In **{factor_name} = {factor_value}**, the chance of **{target_name}** is about **{chance:.1f}%**.")
             st.caption("These are data-based associations. Use them as guidance with field inspection.")
+            st.caption("Columns: target_rate = target_cases / total_records. risk_score = target_rate * sqrt(total_records) to balance rate and sample size.")
             st.dataframe(
                 top_drivers[
                     ["severity_target", "factor", "factor_value", "target_rate", "total_records", "target_cases", "risk_score"]
@@ -543,4 +557,3 @@ with t4:
                     use_container_width=True,
                     hide_index=True,
                 )
-

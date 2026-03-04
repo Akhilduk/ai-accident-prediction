@@ -247,7 +247,9 @@ if section == "Severity AI Prediction":
             out = pd.DataFrame({"Severity": class_labels, "Probability": proba}).sort_values("Probability", ascending=False)
             out["Severity"] = out["Severity"].map(lambda x: SEVERITY_LABEL_MAP.get(str(x), str(x)))
             st.subheader("AI Severity Prediction")
+            st.caption("Table shows class probabilities from the trained model. Probability values are between 0 and 1 and sum to 1.")
             st.dataframe(out, use_container_width=True, hide_index=True)
+            st.caption("Bar chart: X-axis severity class, Y-axis predicted probability. Highest bar is the most likely outcome for your selected scenario.")
             st.plotly_chart(
                 style_plotly(px.bar(out, x="Severity", y="Probability", title="Predicted Severity Probability")),
                 use_container_width=True,
@@ -293,7 +295,9 @@ if section == "Severity AI Prediction":
             )
             summary["Severity"] = summary["Severity"].map(lambda x: SEVERITY_LABEL_MAP.get(str(x), str(x)))
             st.subheader("Average Severity Probability")
+            st.caption("Average probability across all matching records after applying your filters.")
             st.dataframe(summary.style.format({"Probability": "{:.2%}"}), use_container_width=True, hide_index=True)
+            st.caption("Bar chart compares average class probabilities for the selected filter combination.")
             st.plotly_chart(
                 style_plotly(px.bar(summary, x="Severity", y="Probability", title="Average Severity Probability")),
                 use_container_width=True,
@@ -310,7 +314,9 @@ if section == "Severity AI Prediction":
                 .sort_values("Average severe risk", ascending=False)
             )
             st.subheader("Top Jurisdictions by Predicted High Severity Risk")
+            st.caption("Average severe risk = mean of (P(Fatal) + P(Serious Injury)) for records in each jurisdiction. Samples = matched rows used.")
             st.dataframe(place_risk.head(30), use_container_width=True, hide_index=True)
+            st.caption("Bar chart ranks jurisdictions by predicted high-severity risk. Higher bar means higher expected severe outcome chance.")
             st.plotly_chart(
                 style_plotly(
                     px.bar(
@@ -398,7 +404,9 @@ else:
         display = ranking.rename(columns={PLACE_COL: PLACE_LABEL, score_col: score_label})
         top_n = int(st.session_state["hotspot_top_n"])
         top_df = display.head(top_n)
+        st.caption("Ranking table sorted from highest risk/count to lowest for selected year/month and source mode.")
         st.dataframe(top_df, use_container_width=True, hide_index=True, height=420)
+        st.caption("Bar chart: X-axis jurisdiction, Y-axis selected score (actual accidents / predicted monthly count / predicted daily risk).")
         st.plotly_chart(
             style_plotly(px.bar(top_df, x=PLACE_LABEL, y=score_label, title=f"Hotspot ranking for {target_year}-{target_month:02d}")),
             use_container_width=True,
@@ -407,6 +415,7 @@ else:
         coords = df.groupby(PLACE_COL)[["Latitude", "Longitude"]].median().reset_index().rename(columns={PLACE_COL: PLACE_LABEL})
         map_df = coords.merge(top_df[[PLACE_LABEL, score_label]], on=PLACE_LABEL, how="inner")
         if not map_df.empty:
+            st.caption("Bubble map: bigger and darker bubbles represent higher selected hotspot score for that place.")
             fig = px.scatter_mapbox(
                 map_df,
                 lat="Latitude",
@@ -438,6 +447,7 @@ else:
                 hist_trend["period"] = (
                     hist_trend["year"].astype(int).astype(str) + "-" + hist_trend["month_num"].astype(int).astype(str).str.zfill(2)
                 )
+                st.caption("Historical trend line: X-axis month-year, Y-axis actual accident count. Use it to compare selected jurisdictions over time.")
                 st.plotly_chart(
                     style_plotly(px.line(hist_trend, x="period", y="actual_count", color=PLACE_LABEL, title="Historical trend by jurisdiction")),
                     use_container_width=True,
@@ -446,8 +456,8 @@ else:
                 trend = forecast[forecast[PLACE_COL].astype(str).isin(trend_pick)].copy()
                 trend = trend.rename(columns={PLACE_COL: PLACE_LABEL})
                 trend["period"] = pd.to_datetime(trend["forecast_date"]).dt.strftime("%Y-%m")
+                st.caption("Forecast trend line: X-axis month-year, Y-axis predicted monthly count from AI forecast model.")
                 st.plotly_chart(
                     style_plotly(px.line(trend, x="period", y="predicted_count", color=PLACE_LABEL, title="Forecast trend by jurisdiction")),
                     use_container_width=True,
                 )
-
