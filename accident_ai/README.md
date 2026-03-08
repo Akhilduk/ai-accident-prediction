@@ -23,6 +23,7 @@ Python-only Streamlit app for end-to-end accident analytics, ML severity predict
 accident_ai/
   app.py
   pages/
+    0_Project_Documentation.py
     1_Home.py
     2_Data_Manager.py
     3_Dashboard.py
