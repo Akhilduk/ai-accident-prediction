@@ -12,6 +12,7 @@ from src.master_reference import load_master_reference
 SEVERITY_MAP = {"F": "Fatal", "M": "Minor", "G": "Grievous"}
 MIN_YEAR = 2000
 MAX_YEAR = pd.Timestamp.now().year + 1
+SEVERITY_SCORE_COL = "SEVERITY SCORE"
 
 
 
@@ -251,6 +252,11 @@ def clean_data(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     df["severity_target"] = df["SEVERITY"].astype(str).str.strip().str.upper().map(SEVERITY_MAP)
     df.loc[df["severity_target"].isna(), "severity_target"] = df["SEVERITY"].astype(str).str.strip()
+
+    fatal = pd.to_numeric(df["FATAL"], errors="coerce").fillna(0)
+    grievous = pd.to_numeric(df["GRIEVOUS"], errors="coerce").fillna(0)
+    minor = pd.to_numeric(df["MINOR"], errors="coerce").fillna(0)
+    df[SEVERITY_SCORE_COL] = (10 * fatal) + (5 * grievous) + (2 * minor)
 
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
