@@ -32,6 +32,16 @@ def plot_monthly(df: pd.DataFrame):
 
 def plot_top_hotspots(df: pd.DataFrame):
     place_col = "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION"
-    g = df.groupby(place_col).agg(total=("FIR NO", "count"), fatal=("FATAL", "sum")).reset_index()
+    g = (
+        df.groupby(place_col)
+        .agg(
+            total=("FIR NO", "count"),
+            fatal=("FATAL", "sum"),
+            grievous=("GRIEVOUS", "sum"),
+            minor=("MINOR", "sum"),
+            severity_score=("SEVERITY SCORE", "sum"),
+        )
+        .reset_index()
+    )
     g["fatal_rate"] = (g["fatal"] / g["total"]).fillna(0)
-    return g.sort_values("total", ascending=False).head(10)
+    return g.sort_values(["severity_score", "total"], ascending=False).head(10)

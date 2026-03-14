@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from src.cleaning import clean_data
-from src.config import CLEANED_DATASET, PROCESSED_DIR
+from src.config import CLEANED_DATASET, CLEANED_DATASET_XLSX, PROCESSED_DIR
 from src.data_io import (
     get_active_dataset,
     list_versions,
@@ -101,7 +101,8 @@ if active:
         cleaned, info = clean_data(raw)
         PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
         cleaned.to_csv(CLEANED_DATASET, index=False)
-        st.success("Dataset validated and cleaned successfully.")
+        cleaned.to_excel(CLEANED_DATASET_XLSX, index=False)
+        st.success("Dataset validated, cleaned, and saved with SEVERITY SCORE successfully.")
         st.caption(f"Footer/legend rows removed: {info['removed_footer_rows']}")
         st.caption("Preview table shows first 20 cleaned rows used by Dashboard/Training/Prediction. Each row represents one accident record after standardization.")
         st.dataframe(cleaned.head(20), use_container_width=True)
