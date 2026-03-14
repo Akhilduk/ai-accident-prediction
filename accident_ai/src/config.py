@@ -10,6 +10,7 @@ REPORTS_DIR = ROOT_DIR / "reports"
 DEFAULT_DATASET = Path("/mnt/data/previous accident data (1).xlsx")
 ACTIVE_DATASET_POINTER = DATA_DIR / "active_dataset.txt"
 CLEANED_DATASET = PROCESSED_DIR / "active_cleaned.csv"
+CLEANED_DATASET_XLSX = PROCESSED_DIR / "active_cleaned.xlsx"
 BEST_MODEL_PATH = MODELS_DIR / "best_model.joblib"
 LEADERBOARD_PATH = REPORTS_DIR / "model_leaderboard.csv"
 TRAINING_REPORT_JSON = REPORTS_DIR / "training_report.json"
