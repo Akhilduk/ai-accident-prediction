@@ -182,6 +182,7 @@ for key, default in {
     "dash_corr_x": default_correlation_axes.copy(),
     "dash_corr_y": default_correlation_axes.copy(),
     "dash_corr_method": "pearson",
+    "dash_corr_color_style": "Soft",
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -219,6 +220,12 @@ with st.sidebar:
         key="dash_corr_method",
         format_func=lambda x: x.title(),
     )
+    st.selectbox(
+        "Matrix Color Style",
+        ["Soft", "Diverging"],
+        key="dash_corr_color_style",
+        help="Soft = calmer single-tone colors for easy reading. Diverging = stronger positive/negative contrast.",
+    )
     if st.button("Clear all filters", use_container_width=True):
         st.session_state["dash_place"] = []
         st.session_state["dash_year"] = []
@@ -230,6 +237,7 @@ with st.sidebar:
         st.session_state["dash_corr_x"] = default_correlation_axes.copy()
         st.session_state["dash_corr_y"] = default_correlation_axes.copy()
         st.session_state["dash_corr_method"] = "pearson"
+        st.session_state["dash_corr_color_style"] = "Soft"
         st.rerun()
 
 f = df.copy()
@@ -392,8 +400,10 @@ with t4:
         corr_all = corr_df.corr(method=corr_method, numeric_only=True).round(3)
         corr_view = corr_all.loc[selected_y, selected_x]
         corr_display = corr_view.rename(index=friendly_factor_names, columns=friendly_factor_names)
-        show_cell_text = max(len(selected_x), len(selected_y)) <= 10
+        show_cell_text = max(len(selected_x), len(selected_y)) <= 12
         matrix_height = max(420, min(1200, 140 + (36 * len(selected_y))))
+        color_style = st.session_state.get("dash_corr_color_style", "Soft")
+        color_scale = "Blues" if color_style == "Soft" else "RdBu_r"
 
         st.caption("Matrix values range from -1 to +1. Near +1: move together. Near -1: move opposite. Near 0: weak relation. This is association, not proof of cause.")
         fig_corr = px.imshow(
@@ -401,7 +411,7 @@ with t4:
             text_auto=".2f" if show_cell_text else False,
             aspect="auto",
             title=f"X vs Y Relationship Matrix ({corr_method.title()})",
-            color_continuous_scale="RdBu_r",
+            color_continuous_scale=color_scale,
             zmin=-1,
             zmax=1,
         )
