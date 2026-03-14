@@ -32,8 +32,26 @@ def plot_monthly(df: pd.DataFrame):
 
 def plot_top_hotspots(df: pd.DataFrame):
     place_col = "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION"
+    view = df.copy()
+
+    if place_col not in view.columns:
+        return pd.DataFrame(columns=[place_col, "total", "fatal", "grievous", "minor", "severity_score", "fatal_rate"])
+
+    for col in ["FATAL", "GRIEVOUS", "MINOR"]:
+        if col not in view.columns:
+            view[col] = 0
+        view[col] = pd.to_numeric(view[col], errors="coerce").fillna(0)
+
+    if "SEVERITY SCORE" not in view.columns:
+        view["SEVERITY SCORE"] = (10 * view["FATAL"]) + (5 * view["GRIEVOUS"]) + (2 * view["MINOR"])
+    else:
+        view["SEVERITY SCORE"] = pd.to_numeric(view["SEVERITY SCORE"], errors="coerce").fillna(0)
+
+    if "FIR NO" not in view.columns:
+        view["FIR NO"] = 1
+
     g = (
-        df.groupby(place_col)
+        view.groupby(place_col)
         .agg(
             total=("FIR NO", "count"),
             fatal=("FATAL", "sum"),
