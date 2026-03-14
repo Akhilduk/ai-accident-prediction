@@ -70,14 +70,10 @@ with st.expander("How to read X-axis, Y-axis, matrix, and severity logic", expan
   - First row is the highest-risk hotspot in this filtered view.
 
 ### 2) Correlation matrix: exact method used
-1. You select factors from sidebar (**Factors to compare**).
-2. If factor is text (like `GEOMETRY`), app converts it into internal category code numbers.
-3. App creates extra severity indicator columns:
-   - `severity_fatal` = 1 when class is Fatal else 0.
-   - `severity_grievous` = 1 when class is Serious Injury else 0.
-   - `severity_minor` = 1 when class is Minor else 0.
-   - `severity_high` = 1 when class is Fatal or Serious Injury else 0.
-4. Correlation is computed between all selected columns:
+1. You select X-axis factors and Y-axis factors from sidebar.
+2. Only these approved columns are available in selector/filter.
+3. If a selected factor is text (like `GEOMETRY`), app converts it into internal category codes.
+4. Correlation is computed only for selected X and Y groups:
    - **Pearson**: straight-line relationship.
    - **Spearman**: rank/order relationship.
 5. Matrix cell value is from **-1 to +1**.
@@ -88,9 +84,9 @@ with st.expander("How to read X-axis, Y-axis, matrix, and severity logic", expan
 - `+0.03` => very weak relation (almost no pattern).
 - **Important:** correlation is **association**, not proof of cause.
 
-### 4) How top factors are picked for severity
-- App takes selected severity target column (example: `severity_high`).
-- Sorts factors by absolute correlation `abs(correlation)` in descending order.
+### 4) How top factors are picked for selected Y target
+- App takes selected Y-axis target column (example: `SEVERITY SCORE`).
+- Sorts selected X-axis factors by absolute correlation `abs(correlation)` in descending order.
 - Impact level used in this page:
   - **High** if `abs(correlation) >= 0.35`
   - **Medium** if `abs(correlation) >= 0.20`
@@ -120,43 +116,52 @@ dow_options = sorted(df["day_of_week"].astype(str).unique().tolist())
 dn_options = sorted(df["day_night_label"].astype(str).unique().tolist())
 geometry_options = sorted(df["GEOMETRY"].astype(str).unique().tolist())
 severity_options = sorted(df["severity_target"].astype(str).unique().tolist())
-correlation_key_options = [
+correlation_axis_options = [
     "Distance",
     "NO. OF VEHICLE",
-    "year",
-    "month_num",
-    "hour",
-    "is_weekend",
-    "is_night",
-    "day_night_label",
+    "Date",
+    "DAY OF THE WEEK",
+    "Month of the year",
+    "Year of Accident",
+    "Time",
+    "D/N",
+    "PATTERN OF COLLISION",
+    "TYPE OF COLLISION",
+    "TYPE OF VEHICLE-1",
+    "TYPE OF VEHICLE-2",
     "GEOMETRY",
-    "JN/NOT",
     "PRESENCE OF MEDIAN",
     "PRESENCE OF SHOULDER",
     "PRESENCE OF FOOTPATH",
-    "PATTERN_OF_COLLISION_LABEL",
-    "TYPE_OF_COLLISION_LABEL",
-    "TYPE_OF_VEHICLE_1_LABEL",
-    "TYPE_OF_VEHICLE_2_LABEL",
+    "SIDE ROAD",
+    "JN/NOT",
+    "SEVERITY SCORE",
 ]
+default_correlation_axes = [c for c in correlation_axis_options if c != "SEVERITY SCORE"]
 friendly_factor_names = {
-    "Distance": "Road Segment Distance",
-    "NO. OF VEHICLE": "Number of Vehicles Involved",
-    "year": "Year",
-    "month_num": "Month",
-    "hour": "Hour of Day",
-    "is_weekend": "Weekend",
-    "is_night": "Night Time",
-    "day_night_label": "Day/Night",
-    "GEOMETRY": "Road Geometry",
-    "JN/NOT": "Junction Presence",
-    "PRESENCE OF MEDIAN": "Median Present",
-    "PRESENCE OF SHOULDER": "Shoulder Present",
-    "PRESENCE OF FOOTPATH": "Footpath Present",
-    "PATTERN_OF_COLLISION_LABEL": "Collision Pattern",
-    "TYPE_OF_COLLISION_LABEL": "Collision Type",
-    "TYPE_OF_VEHICLE_1_LABEL": "Primary Vehicle Type",
-    "TYPE_OF_VEHICLE_2_LABEL": "Secondary Vehicle Type",
+    "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION": "Jurisdiction / Corridor",
+    "FIR NO": "FIR Number",
+    "Distance": "Distance",
+    "Latitude": "Latitude",
+    "Longitude": "Longitude",
+    "NO. OF VEHICLE": "Number of Vehicles",
+    "Date": "Date",
+    "DAY OF THE WEEK": "Day of Week",
+    "Month of the year": "Month of Year",
+    "Year of Accident": "Year of Accident",
+    "Time": "Time",
+    "D/N": "Day/Night",
+    "PATTERN OF COLLISION": "Pattern of Collision",
+    "TYPE OF COLLISION": "Type of Collision",
+    "TYPE OF VEHICLE-1": "Type of Vehicle-1",
+    "TYPE OF VEHICLE-2": "Type of Vehicle-2",
+    "GEOMETRY": "Geometry",
+    "PRESENCE OF MEDIAN": "Presence of Median",
+    "PRESENCE OF SHOULDER": "Presence of Shoulder",
+    "PRESENCE OF FOOTPATH": "Presence of Footpath",
+    "SIDE ROAD": "Side Road",
+    "JN/NOT": "Junction / Not",
+    "SEVERITY SCORE": "Severity Score",
 }
 severity_label_map = {
     "Fatal": "Fatal",
@@ -172,11 +177,20 @@ for key, default in {
     "dash_dn": [],
     "dash_geometry": [],
     "dash_severity": [],
-    "dash_corr_keys": ["Distance", "NO. OF VEHICLE", "month_num", "hour", "is_night", "GEOMETRY", "JN/NOT"],
+    "dash_corr_x": default_correlation_axes.copy(),
+    "dash_corr_y": default_correlation_axes.copy(),
     "dash_corr_method": "pearson",
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
+
+# Keep axis selections valid even when options are changed across releases.
+st.session_state["dash_corr_x"] = [c for c in st.session_state.get("dash_corr_x", []) if c in correlation_axis_options]
+st.session_state["dash_corr_y"] = [c for c in st.session_state.get("dash_corr_y", []) if c in correlation_axis_options]
+if not st.session_state["dash_corr_x"]:
+    st.session_state["dash_corr_x"] = default_correlation_axes.copy()
+if not st.session_state["dash_corr_y"]:
+    st.session_state["dash_corr_y"] = default_correlation_axes.copy()
 
 with st.sidebar:
     st.header("Dashboard Filters")
@@ -195,7 +209,8 @@ with st.sidebar:
     )
     st.markdown("---")
     st.markdown("**Relationship Settings**")
-    st.multiselect("Factors to compare", correlation_key_options, key="dash_corr_keys")
+    st.multiselect("X-axis factors", correlation_axis_options, key="dash_corr_x")
+    st.multiselect("Y-axis factors", correlation_axis_options, key="dash_corr_y")
     st.selectbox(
         "Relationship Method",
         ["pearson", "spearman"],
@@ -210,7 +225,8 @@ with st.sidebar:
         st.session_state["dash_dn"] = []
         st.session_state["dash_geometry"] = []
         st.session_state["dash_severity"] = []
-        st.session_state["dash_corr_keys"] = ["Distance", "NO. OF VEHICLE", "month_num", "hour", "is_night", "GEOMETRY", "JN/NOT"]
+        st.session_state["dash_corr_x"] = default_correlation_axes.copy()
+        st.session_state["dash_corr_y"] = default_correlation_axes.copy()
         st.session_state["dash_corr_method"] = "pearson"
         st.rerun()
 
@@ -354,49 +370,61 @@ with t2:
 with t3:
     st.markdown("#### Top 15 Hotspots (Filtered Data)")
     top_hotspots = plot_top_hotspots(f).head(15)
-    st.caption("Table is sorted by total accidents. 'fatal_rate' is calculated as fatal / total for each place.")
+    st.caption("Table is sorted by severity_score using (10×FATAL) + (5×GRIEVOUS) + (2×MINOR), then by total accidents. 'fatal_rate' is fatal / total.")
     st.dataframe(top_hotspots.rename(columns={place_col: place_label}), use_container_width=True, height=420)
 
 with t4:
     st.markdown("#### Factor Relationship Matrix (Filtered Data)")
-    selected_keys = [k for k in st.session_state["dash_corr_keys"] if k in f.columns]
-    if not selected_keys:
-        st.info("Select at least one correlation key from sidebar.")
+    selected_x = [k for k in st.session_state["dash_corr_x"] if k in f.columns]
+    selected_y = [k for k in st.session_state["dash_corr_y"] if k in f.columns]
+    if not selected_x or not selected_y:
+        st.info("Select at least one X-axis factor and one Y-axis factor from sidebar.")
     else:
-        corr_df = f[selected_keys].copy()
-        for col in selected_keys:
+        corr_cols = list(dict.fromkeys(selected_x + selected_y))
+        corr_df = f[corr_cols].copy()
+        for col in corr_cols:
             if not pd.api.types.is_numeric_dtype(corr_df[col]):
                 corr_df[col] = corr_df[col].astype("category").cat.codes
 
-        # Add severity indicators for direct class-wise relationship view.
-        corr_df["severity_fatal"] = (f["severity_target"] == "Fatal").astype(int)
-        corr_df["severity_grievous"] = (f["severity_target"] == "Grievous").astype(int)
-        corr_df["severity_minor"] = (f["severity_target"] == "Minor").astype(int)
-        corr_df["severity_high"] = ((f["severity_target"] == "Fatal") | (f["severity_target"] == "Grievous")).astype(int)
-
         corr_method = st.session_state.get("dash_corr_method", "pearson")
-        corr = corr_df.corr(method=corr_method, numeric_only=True).round(3)
-        st.caption("Matrix values range from -1 to +1. Near +1: move together. Near -1: move opposite. Near 0: weak relation. This is association, not proof of cause.")
-        fig_corr = px.imshow(corr, text_auto=True, aspect="auto", title=f"Feature Relationship Matrix ({corr_method.title()})")
-        st.plotly_chart(style_plotly(fig_corr), use_container_width=True)
+        corr_all = corr_df.corr(method=corr_method, numeric_only=True).round(3)
+        corr_view = corr_all.loc[selected_y, selected_x]
+        corr_display = corr_view.rename(index=friendly_factor_names, columns=friendly_factor_names)
+        show_cell_text = max(len(selected_x), len(selected_y)) <= 10
+        matrix_height = max(420, min(1200, 140 + (36 * len(selected_y))))
 
-        sev_col = st.selectbox(
-            "Find factors affecting",
-            ["severity_high", "severity_fatal", "severity_grievous", "severity_minor"],
-            format_func=lambda x: {
-                "severity_high": "High Severity (Fatal + Serious Injury)",
-                "severity_fatal": "Fatal",
-                "severity_grievous": "Serious Injury",
-                "severity_minor": "Minor Injury",
-            }[x],
+        st.caption("Matrix values range from -1 to +1. Near +1: move together. Near -1: move opposite. Near 0: weak relation. This is association, not proof of cause.")
+        fig_corr = px.imshow(
+            corr_display,
+            text_auto=".2f" if show_cell_text else False,
+            aspect="auto",
+            title=f"X vs Y Relationship Matrix ({corr_method.title()})",
+            color_continuous_scale="RdBu_r",
+            zmin=-1,
+            zmax=1,
+        )
+        fig_corr.update_layout(height=matrix_height)
+        fig_corr.update_xaxes(side="top", tickangle=-35, automargin=True)
+        fig_corr.update_yaxes(automargin=True)
+        st.plotly_chart(style_plotly(fig_corr), use_container_width=True)
+        if not show_cell_text:
+            st.caption("Large matrix detected: values are available on hover and in the detailed table below.")
+        with st.expander("Show correlation matrix table", expanded=False):
+            st.dataframe(corr_display.round(3), use_container_width=True)
+
+        target_col = st.selectbox(
+            "Find X-axis factors affecting (Y target)",
+            selected_y,
+            format_func=lambda x: friendly_factor_names.get(x, x),
         )
         sev_corr = (
-            corr[sev_col]
-            .drop(labels=[sev_col], errors="ignore")
+            corr_all[target_col]
+            .loc[selected_x]
+            .drop(labels=[target_col], errors="ignore")
             .sort_values(key=lambda s: s.abs(), ascending=False)
             .head(15)
             .reset_index()
-            .rename(columns={"index": "key", sev_col: "correlation"})
+            .rename(columns={"index": "key", target_col: "correlation"})
         )
         sev_corr["impact_direction"] = sev_corr["correlation"].apply(lambda v: "Increases with target" if v > 0 else "Decreases with target")
         sev_corr["abs_correlation"] = sev_corr["correlation"].abs()
@@ -405,46 +433,17 @@ with t4:
             lambda v: "High" if v >= 0.35 else ("Medium" if v >= 0.20 else "Low")
         )
 
-        st.caption("This bar chart ranks factors by relationship strength with selected severity target. Higher absolute value means stronger relationship.")
+        st.caption("This bar chart ranks selected X-axis factors by relationship strength with selected Y-axis target.")
         st.plotly_chart(
             style_plotly(
                 px.bar(
                     sev_corr,
                     x="key",
                     y="correlation",
-                    title=f"Top {corr_method.title()} relationships with {sev_col.replace('severity_', '').title()}",
+                    title=f"Top {corr_method.title()} relationships with {friendly_factor_names.get(target_col, target_col)}",
                 )
             ),
             use_container_width=True,
-        )
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("**Top Risk-Increasing Factors**")
-            pos = sev_corr.sort_values("correlation", ascending=False).head(8)
-            st.caption("Factors with positive relation to selected severity.")
-            st.dataframe(pos[["factor", "correlation"]], use_container_width=True, hide_index=True)
-        with c2:
-            st.markdown("**Top Risk-Reducing Factors**")
-            neg = sev_corr.sort_values("correlation", ascending=True).head(8)
-            st.caption("Factors with negative relation to selected severity.")
-            st.dataframe(neg[["factor", "correlation"]], use_container_width=True, hide_index=True)
-
-        st.markdown("**Simple Explanation (For General Users)**")
-        top3 = sev_corr.sort_values("abs_correlation", ascending=False).head(3).copy()
-        if top3.empty:
-            st.info("Not enough variation to explain factors for selected filters.")
-        else:
-            for _, row in top3.iterrows():
-                direction = "higher chance" if row["correlation"] > 0 else "lower chance"
-                st.write(f"- **{row['factor']}** is linked with **{direction}** of selected severity (**{row['impact_level']} impact**).")
-        level_counts = sev_corr["impact_level"].value_counts()
-        st.write(
-            f"Impact summary: High = {int(level_counts.get('High', 0))}, "
-            f"Medium = {int(level_counts.get('Medium', 0))}, "
-            f"Low = {int(level_counts.get('Low', 0))}"
-        )
-        st.caption(
-            "This shows a relationship pattern, not strict cause-and-effect. Use it as planning guidance with field checks."
         )
         st.dataframe(
             sev_corr[["factor", "impact_level", "correlation", "abs_correlation", "impact_direction"]],
