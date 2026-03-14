@@ -400,7 +400,6 @@ with t4:
         corr_all = corr_df.corr(method=corr_method, numeric_only=True).round(3)
         corr_view = corr_all.loc[selected_y, selected_x]
         corr_display = corr_view.rename(index=friendly_factor_names, columns=friendly_factor_names)
-        show_cell_text = max(len(selected_x), len(selected_y)) <= 12
         matrix_height = max(420, min(1200, 140 + (36 * len(selected_y))))
         color_style = st.session_state.get("dash_corr_color_style", "Soft")
         color_scale = "Blues" if color_style == "Soft" else "RdBu_r"
@@ -408,7 +407,7 @@ with t4:
         st.caption("Matrix values range from -1 to +1. Near +1: move together. Near -1: move opposite. Near 0: weak relation. This is association, not proof of cause.")
         fig_corr = px.imshow(
             corr_display,
-            text_auto=".2f" if show_cell_text else False,
+            text_auto=".2f",
             aspect="auto",
             title=f"X vs Y Relationship Matrix ({corr_method.title()})",
             color_continuous_scale=color_scale,
@@ -419,8 +418,7 @@ with t4:
         fig_corr.update_xaxes(side="top", tickangle=-35, automargin=True)
         fig_corr.update_yaxes(automargin=True)
         st.plotly_chart(style_plotly(fig_corr), use_container_width=True)
-        if not show_cell_text:
-            st.caption("Large matrix detected: values are available on hover and in the detailed table below.")
+        st.caption("Cell values are shown inside each box; hover and table view are also available for easier reading.")
         with st.expander("Show correlation matrix table", expanded=False):
             st.dataframe(corr_display.round(3), use_container_width=True)
 
