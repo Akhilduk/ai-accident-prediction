@@ -117,8 +117,6 @@ dn_options = sorted(df["day_night_label"].astype(str).unique().tolist())
 geometry_options = sorted(df["GEOMETRY"].astype(str).unique().tolist())
 severity_options = sorted(df["severity_target"].astype(str).unique().tolist())
 correlation_axis_options = [
-    "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION",
-    "FIR NO",
     "Distance",
     "Latitude",
     "Longitude",
@@ -141,6 +139,7 @@ correlation_axis_options = [
     "JN/NOT",
     "SEVERITY SCORE",
 ]
+default_correlation_axes = [c for c in correlation_axis_options if c != "SEVERITY SCORE"]
 friendly_factor_names = {
     "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION": "Jurisdiction / Corridor",
     "FIR NO": "FIR Number",
@@ -180,12 +179,20 @@ for key, default in {
     "dash_dn": [],
     "dash_geometry": [],
     "dash_severity": [],
-    "dash_corr_x": ["Distance", "NO. OF VEHICLE", "GEOMETRY", "JN/NOT", "SEVERITY SCORE"],
-    "dash_corr_y": ["SEVERITY SCORE"],
+    "dash_corr_x": default_correlation_axes.copy(),
+    "dash_corr_y": default_correlation_axes.copy(),
     "dash_corr_method": "pearson",
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
+
+# Keep axis selections valid even when options are changed across releases.
+st.session_state["dash_corr_x"] = [c for c in st.session_state.get("dash_corr_x", []) if c in correlation_axis_options]
+st.session_state["dash_corr_y"] = [c for c in st.session_state.get("dash_corr_y", []) if c in correlation_axis_options]
+if not st.session_state["dash_corr_x"]:
+    st.session_state["dash_corr_x"] = default_correlation_axes.copy()
+if not st.session_state["dash_corr_y"]:
+    st.session_state["dash_corr_y"] = default_correlation_axes.copy()
 
 with st.sidebar:
     st.header("Dashboard Filters")
@@ -220,8 +227,8 @@ with st.sidebar:
         st.session_state["dash_dn"] = []
         st.session_state["dash_geometry"] = []
         st.session_state["dash_severity"] = []
-        st.session_state["dash_corr_x"] = ["Distance", "NO. OF VEHICLE", "GEOMETRY", "JN/NOT", "SEVERITY SCORE"]
-        st.session_state["dash_corr_y"] = ["SEVERITY SCORE"]
+        st.session_state["dash_corr_x"] = default_correlation_axes.copy()
+        st.session_state["dash_corr_y"] = default_correlation_axes.copy()
         st.session_state["dash_corr_method"] = "pearson"
         st.rerun()
 
@@ -384,9 +391,28 @@ with t4:
         corr_method = st.session_state.get("dash_corr_method", "pearson")
         corr_all = corr_df.corr(method=corr_method, numeric_only=True).round(3)
         corr_view = corr_all.loc[selected_y, selected_x]
+        corr_display = corr_view.rename(index=friendly_factor_names, columns=friendly_factor_names)
+        show_cell_text = max(len(selected_x), len(selected_y)) <= 10
+        matrix_height = max(420, min(1200, 140 + (36 * len(selected_y))))
+
         st.caption("Matrix values range from -1 to +1. Near +1: move together. Near -1: move opposite. Near 0: weak relation. This is association, not proof of cause.")
-        fig_corr = px.imshow(corr_view, text_auto=True, aspect="auto", title=f"X vs Y Relationship Matrix ({corr_method.title()})")
+        fig_corr = px.imshow(
+            corr_display,
+            text_auto=".2f" if show_cell_text else False,
+            aspect="auto",
+            title=f"X vs Y Relationship Matrix ({corr_method.title()})",
+            color_continuous_scale="RdBu_r",
+            zmin=-1,
+            zmax=1,
+        )
+        fig_corr.update_layout(height=matrix_height)
+        fig_corr.update_xaxes(side="top", tickangle=-35, automargin=True)
+        fig_corr.update_yaxes(automargin=True)
         st.plotly_chart(style_plotly(fig_corr), use_container_width=True)
+        if not show_cell_text:
+            st.caption("Large matrix detected: values are available on hover and in the detailed table below.")
+        with st.expander("Show correlation matrix table", expanded=False):
+            st.dataframe(corr_display.round(3), use_container_width=True)
 
         target_col = st.selectbox(
             "Find X-axis factors affecting (Y target)",
