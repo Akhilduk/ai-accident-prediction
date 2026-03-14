@@ -118,6 +118,8 @@ geometry_options = sorted(df["GEOMETRY"].astype(str).unique().tolist())
 severity_options = sorted(df["severity_target"].astype(str).unique().tolist())
 correlation_axis_options = [
     "Distance",
+    "Latitude",
+    "Longitude",
     "NO. OF VEHICLE",
     "Date",
     "DAY OF THE WEEK",
