@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+import pandas as pd
 import streamlit as st
 
 from src.ui import apply_theme
@@ -20,6 +24,42 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+DATA_PATH = Path("accident_ai/data/processed/active_cleaned.csv")
+LEADERBOARD_PATH = Path("accident_ai/reports/model_leaderboard.csv")
+TRAINING_JSON_PATH = Path("accident_ai/reports/training_report.json")
+
+
+def _safe_read_csv(path: Path) -> pd.DataFrame:
+    return pd.read_csv(path) if path.exists() else pd.DataFrame()
+
+
+def _safe_read_json(path: Path) -> dict:
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
+def _format_factor_value(value: str) -> str:
+    value = str(value)
+    mapping = {
+        "yes": "junction areas",
+        "no": "non-junction areas",
+        "day": "daylight hours",
+        "night": "night hours",
+        "straight": "straight roads",
+        "curve": "curved roads",
+    }
+    return mapping.get(value.lower(), value.replace("_", " "))
+
+
+def _factor_sentence(factor: str, value: str, chance: float) -> str:
+    value_text = _format_factor_value(value)
+    if factor == "JN/NOT":
+        return f"In **{value_text}**, the probability of **serious injury** is **{chance:.1f}%**."
+    if factor == "day_night_label":
+        return f"During **{value_text}**, the probability of **serious injury** is **{chance:.1f}%**."
+    if factor == "GEOMETRY":
+        return f"On **{value_text}**, the probability of **serious injury** is **{chance:.1f}%**."
+    return f"For **{factor} = {value_text}**, the probability of **serious injury** is **{chance:.1f}%**."
 
 st.markdown("## 1) What this project is and why it exists")
 st.markdown(
@@ -293,6 +333,237 @@ Each cell compares two factors and returns a value from **-1 to +1**.
 Correlation means **association**, not proven cause.
 """
 )
+
+st.markdown("## 10A) Detailed result interpretation for reports")
+st.markdown(
+    """
+This section is written in a **report-ready** style so you can directly use the logic in project reports, presentations, or review notes.
+
+### A) How to write correlation findings in simple language
+When you see a factor with a high positive value, write it like this:
+- **Simple style**: "Straight roads show a high association with serious injury cases."
+- **Better report style**: "The correlation analysis indicates that straight-road locations are more frequently linked with severe outcomes than many other road conditions in the selected data."
+
+If the dashboard also shows a rate/result such as **76.5%**, write:
+- "On straight roads, the probability of serious injury is about **76.5%** in the selected dataset."
+- "In non-junction areas, the probability of serious injury is about **75.6%**."
+- "During daylight hours, the probability of serious injury is about **77.5%**."
+
+### B) How to interpret correlation values
+- **0.00 to 0.19**: very weak relationship; usually not strong enough to treat as a major driver by itself.
+- **0.20 to 0.34**: low to moderate relationship; worth monitoring.
+- **0.35 to 0.49**: meaningful relationship; can be treated as an important warning sign.
+- **0.50 and above**: strong relationship; often one of the main factors connected with the target outcome.
+
+### C) What to write in findings
+Use the following simple structure:
+1. **Finding**: which factor stands out?
+2. **Result interpretation**: what does the number mean in practical terms?
+3. **Why it matters**: why should officials care?
+4. **Suggested action**: what should be done next?
+
+### D) Example report-ready findings
+#### 1. Straight road geometry
+- **Finding**: Straight-road sections show a strong association with serious injury outcomes.
+- **Result interpretation**: In the selected records, straight roads have a high serious-injury probability. This means severe crashes are not limited to curves or complex road shapes; they are also common on roads where drivers may travel faster or become less cautious.
+- **Why it matters**: People often expect curves and junctions to be riskier, but the analysis suggests straight roads may also need strong safety attention.
+- **Suggested action**: improve speed control, install warning boards, strengthen lane discipline monitoring, and review overtaking behaviour on straight sections.
+
+#### 2. Non-junction areas
+- **Finding**: Non-junction areas show a high share of serious-injury cases.
+- **Result interpretation**: This means many severe crashes are happening away from intersections, possibly where vehicles move at higher speed and face fewer control points.
+- **Why it matters**: Safety interventions should not focus only on junctions; open road stretches also require attention.
+- **Suggested action**: review median opening control, shoulder condition, roadside hazards, speeding behaviour, and visibility on long non-junction corridors.
+
+#### 3. Daylight hours
+- **Finding**: Daytime crashes also show a high severe-outcome rate.
+- **Result interpretation**: This means severe crashes are not only a night-time problem. High traffic volume, mixed road users, and risky daytime driving behaviour may also be increasing severity.
+- **Why it matters**: Daylight does not automatically mean safe conditions.
+- **Suggested action**: strengthen daytime enforcement, manage crossing activity, improve lane discipline, and reduce unsafe overtaking during busy hours.
+
+### E) How to interpret the "Why Is Severity High?" output
+This section uses:
+- **target_rate = target_cases / total_records**
+- **risk_score = target_rate × sqrt(total_records)**
+
+#### What target_rate means
+- It tells the **chance** of the selected outcome for a specific group.
+- Example: if straight roads have a `target_rate` of `0.765`, it means **76.5%** of the selected records in that group belong to the chosen severe category.
+
+#### What risk_score means
+- It balances **high rate** and **sample reliability**.
+- A small group can show a high percentage by chance.
+- A larger group with a slightly lower percentage may be more important in practice.
+- So the dashboard gives a higher priority to factors that are both:
+  - linked with severe outcomes, and
+  - supported by enough records.
+
+### F) How to explain F1 score in your report
+- **F1 score** is the balance between **precision** and **recall**.
+- In simple terms, it answers: "Is the model both accurate when it predicts a class, and good at finding most real cases of that class?"
+- A **higher F1 score** means the model gives more reliable classification performance.
+
+#### Simple interpretation guide
+- **0.90 and above**: excellent model performance
+- **0.80 to 0.89**: very strong performance
+- **0.70 to 0.79**: good and usable performance
+- **0.60 to 0.69**: moderate performance; usable with caution
+- **Below 0.60**: weak performance; model improvement is needed
+
+### G) How to explain prediction output
+When the prediction page shows probabilities, explain them like this:
+- "The model does not give only one label; it gives the chance of each severity class."
+- "The class with the highest probability is treated as the most likely outcome."
+- "If Fatal = 0.10, Serious Injury = 0.65, Minor = 0.25, the model expects Serious Injury to be the most likely result."
+
+### H) Final conclusion style for reports
+You can use wording like this:
+- "The analysis shows that road geometry, junction condition, and day/night condition are among the main factors associated with accident severity."
+- "Straight roads, non-junction areas, and daylight periods show a comparatively high probability of serious injury in the selected dataset."
+- "These results suggest that safety planning should not focus only on traditionally risky locations such as junctions or night hours; broader corridor-level control is also important."
+- "The findings should be used as decision-support evidence and combined with field inspection before implementing final interventions."
+
+### I) Solution section for reports
+Based on the dashboard results, common recommendations are:
+- speed management on straight corridors
+- better enforcement in non-junction stretches
+- daytime traffic control and crossing management
+- road-sign review and visibility improvement
+- focused inspection of locations repeatedly appearing in high-severity groups
+- awareness campaigns for overspeeding, unsafe overtaking, and lane indiscipline
+"""
+)
+
+st.markdown("## 10B) Current dataset: ready-to-copy result interpretation")
+current_df = _safe_read_csv(DATA_PATH)
+leaderboard_df = _safe_read_csv(LEADERBOARD_PATH)
+training_json = _safe_read_json(TRAINING_JSON_PATH)
+
+if current_df.empty:
+    st.info("Current cleaned dataset is not available, so live result interpretation cannot be generated.")
+else:
+    current_df["serious_injury_flag"] = current_df["severity_target"].eq("Grievous").astype(int)
+    total_records = len(current_df)
+    severity_counts = current_df["severity_target"].value_counts()
+    grievous_count = int(severity_counts.get("Grievous", 0))
+    fatal_count = int(severity_counts.get("Fatal", 0))
+    minor_count = int(severity_counts.get("Minor", 0))
+
+    st.markdown(
+        f"""
+### A) Overall severity result
+- Total accident records analysed: **{total_records}**
+- Serious injury cases: **{grievous_count}**
+- Fatal cases: **{fatal_count}**
+- Minor injury cases: **{minor_count}**
+
+**Simple interpretation**
+- Serious injury is the dominant class in the current cleaned dataset.
+- This means most of the recorded accidents in this dataset fall into the serious-injury category, so the model and the dashboard naturally focus strongly on this severity level.
+"""
+    )
+
+    st.markdown("### B) Most important severity findings from current data")
+    for factor in ["JN/NOT", "day_night_label", "GEOMETRY"]:
+        grouped = (
+            current_df.groupby(factor, dropna=False, observed=False)
+            .agg(total_records=("serious_injury_flag", "size"), serious_cases=("serious_injury_flag", "sum"))
+            .reset_index()
+        )
+        grouped["target_rate"] = grouped["serious_cases"] / grouped["total_records"]
+        best_row = grouped.sort_values(["target_rate", "total_records"], ascending=[False, False]).iloc[0]
+        st.write(f"- {_factor_sentence(factor, best_row[factor], float(best_row['target_rate']) * 100)}")
+
+    st.markdown(
+        """
+**Result interpretation**
+- These percentages show where serious-injury outcomes are most common in the present dataset.
+- They should be read as a probability within that factor group, not as proof that the factor alone causes the injury severity.
+- For reporting, these are the best direct statements to use because they come from actual grouped accident records.
+"""
+    )
+
+    corr_cols = ["Distance", "hour", "month_num", "is_night", "day_night_label", "GEOMETRY", "JN/NOT", "time_bucket", "TYPE_OF_COLLISION_LABEL"]
+    corr_view = current_df[corr_cols].copy()
+    for col in corr_cols:
+        if not pd.api.types.is_numeric_dtype(corr_view[col]):
+            corr_view[col] = corr_view[col].astype("category").cat.codes
+    corr_view["serious_injury_flag"] = current_df["serious_injury_flag"]
+    corr_series = (
+        corr_view.corr(numeric_only=True)["serious_injury_flag"]
+        .drop("serious_injury_flag")
+        .sort_values(key=lambda s: s.abs(), ascending=False)
+        .head(5)
+    )
+    st.markdown("### C) Correlation matrix: current output interpretation")
+    for name, value in corr_series.items():
+        strength = "high" if abs(value) >= 0.35 else ("medium" if abs(value) >= 0.20 else "low")
+        direction = "positive" if value > 0 else "negative"
+        st.write(
+            f"- **{name}** shows a **{strength} {direction} relationship** with the serious-injury flag in the current matrix output (**correlation = {value:.3f}**)."
+        )
+    st.markdown(
+        """
+**How to explain this in a report**
+- A positive value means the coded factor tends to move in the same direction as serious injury.
+- A negative value means it tends to move in the opposite direction.
+- For categorical columns, the dashboard first converts labels into internal codes, so the correlation matrix should be used mainly to identify **which factors are more connected**, while the grouped percentages should be used to explain **which exact category is riskier**.
+"""
+    )
+
+    if not leaderboard_df.empty:
+        best_model = leaderboard_df.sort_values(["test_f1_macro", "cv_f1_macro_mean"], ascending=False).iloc[0]
+        best_name = str(best_model["model"])
+        details = training_json.get(best_name, {})
+        report = details.get("classification_report", {})
+        grievous_f1 = report.get("Grievous", {}).get("f1-score")
+        fatal_f1 = report.get("Fatal", {}).get("f1-score")
+        minor_f1 = report.get("Minor", {}).get("f1-score")
+
+        st.markdown("### D) F1 score and model output interpretation")
+        st.markdown(
+            f"""
+- Best model from current training report: **{best_name}**
+- Test Accuracy: **{float(best_model['test_accuracy']):.3f}**
+- Test Macro-F1: **{float(best_model['test_f1_macro']):.3f}**
+- Cross-validation Macro-F1: **{float(best_model['cv_f1_macro_mean']):.3f}**
+
+**Simple interpretation**
+- The overall Macro-F1 score is modest, which means the model is **usable for guidance** but is **not yet highly reliable across all severity classes**.
+- The model performs best on the **Grievous** class because that class has the strongest class-level F1 score in the report.
+- The model is much weaker on **Fatal** and **Minor** cases, so those predictions should be read carefully and ideally supported with field judgement.
+"""
+        )
+        if grievous_f1 is not None:
+            st.write(f"- Grievous class F1-score: **{float(grievous_f1):.3f}**")
+        if fatal_f1 is not None:
+            st.write(f"- Fatal class F1-score: **{float(fatal_f1):.3f}**")
+        if minor_f1 is not None:
+            st.write(f"- Minor class F1-score: **{float(minor_f1):.3f}**")
+
+        st.markdown(
+            """
+**Report-ready conclusion**
+- The machine-learning model captures the serious-injury pattern better than the other severity classes.
+- Therefore, the present model is more useful for identifying broad high-severity risk than for giving highly precise class prediction for every single accident.
+- Additional data balancing, feature improvement, and model tuning are recommended if the project needs stronger fatal/minor discrimination.
+"""
+        )
+
+    st.markdown(
+        """
+### E) Final solution-oriented interpretation
+- The current data suggests that **road geometry, junction condition, time pattern, and collision type** are among the factors most connected with severity.
+- The grouped probability analysis shows that some categories within these factors have a much higher serious-injury share than others.
+- This means road-safety action should focus first on the conditions that repeatedly appear with high `target_rate` and strong record support.
+
+**Practical solutions**
+- strengthen speed control and lane-discipline enforcement on straight and open road sections
+- inspect non-junction corridors for speeding, roadside hazards, and poor recovery space
+- manage busy daytime periods through enforcement, crossing control, and overtaking checks
+- prioritise locations and conditions that appear repeatedly in the top severity groups for engineering review
+"""
+    )
 
 st.markdown("## 11) Confusion matrix explained")
 st.markdown(
