@@ -60,7 +60,7 @@ feature_cols = [
 st.markdown(
     """
 ### What happens on this page?
-- The app trains 3 models: **Random Forest**, **XGBoost**, and **CatBoost**.
+- The app trains 3 models: **Random Forest**, **XGBoost**, and **CatBoost** (when the package is installed).
 - It compares model quality using test data.
 - The best model is saved automatically and used in the **Prediction** page.
 
@@ -126,7 +126,7 @@ with st.expander("How training calculations are done (simple + technical)", expa
 3. Preprocessing:
    - Numeric columns -> missing values replaced by **median**.
    - Text columns -> missing values replaced by **most frequent value**, then one-hot encoded.
-4. Models trained: RandomForest, XGBoost (if installed), CatBoost (only if enabled).
+4. Models trained: RandomForest, XGBoost (if installed), CatBoost (if installed locally/cloud).
 5. Cross-validation: selected folds (3/4/5) on training set using Macro-F1.
 6. Best model is selected by sorting leaderboard by `test_f1_macro`, then `cv_f1_macro_mean`.
 
@@ -242,6 +242,28 @@ Use it to answer: **Which severity class is the model confusing most?**
             f"In this matrix, about {correct_pct:.1f}% predictions are on the correct diagonal. "
             "Higher diagonal concentration means a more reliable model."
         )
+
+        feature_importance = details.get("feature_importance", [])
+        if feature_importance:
+            fi_df = pd.DataFrame(feature_importance)
+            fi_df["feature"] = fi_df["feature"].map(_to_user_label).fillna(fi_df["feature"])
+            st.caption("Feature Importance (FI) score: larger values mean the model relied more on that input while making predictions.")
+            st.dataframe(
+                fi_df.style.format({"importance": "{:.4f}", "importance_pct": "{:.2f}%"}),
+                use_container_width=True,
+            )
+            st.plotly_chart(
+                style_plotly(
+                    px.bar(
+                        fi_df.sort_values("importance_pct"),
+                        x="importance_pct",
+                        y="feature",
+                        orientation="h",
+                        title=f"Top Feature Importance - {model_name}",
+                    )
+                ),
+                use_container_width=True,
+            )
 
 if TRAINING_REPORT_JSON.exists():
     with st.expander("Latest training report JSON"):

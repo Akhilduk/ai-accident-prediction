@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Callable
 
@@ -14,8 +13,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, recall_score
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 from src.config import BEST_MODEL_PATH, LEADERBOARD_PATH, REPORTS_DIR, TRAINING_REPORT_CSV, TRAINING_REPORT_JSON
 
@@ -28,6 +26,9 @@ try:
     from catboost import CatBoostClassifier
 except Exception:
     CatBoostClassifier = None
+
+
+TOP_FEATURES_TO_KEEP = 15
 
 
 def _build_preprocessor(X: pd.DataFrame):
@@ -68,13 +69,44 @@ def get_models(fast_mode: bool = False):
             eval_metric="mlogloss",
             random_state=42,
         )
-    # CatBoost is optional and disabled by default for cloud stability.
-    # Enable explicitly with environment variable: ENABLE_CATBOOST=1
-    if CatBoostClassifier is not None and os.getenv("ENABLE_CATBOOST", "0") == "1":
+    if CatBoostClassifier is not None:
         cb_iters = 120 if fast_mode else 250
         cb_depth = 6 if fast_mode else 8
-        models["CatBoost"] = CatBoostClassifier(iterations=cb_iters, learning_rate=0.05, depth=cb_depth, verbose=False, random_seed=42)
+        models["CatBoost"] = CatBoostClassifier(
+            iterations=cb_iters,
+            learning_rate=0.05,
+            depth=cb_depth,
+            loss_function="MultiClass",
+            eval_metric="TotalF1",
+            verbose=False,
+            random_seed=42,
+        )
     return models
+
+
+def _get_top_feature_importance(pipe: Pipeline) -> list[dict[str, float | str]]:
+    model = pipe.named_steps["model"]
+    preprocessor = pipe.named_steps["preprocessor"]
+    raw_importance = getattr(model, "feature_importances_", None)
+    if raw_importance is None:
+        return []
+
+    feature_names = preprocessor.get_feature_names_out()
+    importance = np.asarray(raw_importance, dtype=float).reshape(-1)
+    if feature_names.shape[0] != importance.shape[0]:
+        min_len = min(feature_names.shape[0], importance.shape[0])
+        feature_names = feature_names[:min_len]
+        importance = importance[:min_len]
+
+    total = float(importance.sum())
+    normalized = (importance / total * 100.0) if total > 0 else importance
+    fi = (
+        pd.DataFrame({"feature": feature_names, "importance": importance, "importance_pct": normalized})
+        .sort_values(["importance", "feature"], ascending=[False, True])
+        .head(TOP_FEATURES_TO_KEEP)
+    )
+    fi["feature"] = fi["feature"].str.replace("num__", "", regex=False).str.replace("cat__", "", regex=False)
+    return fi.to_dict(orient="records")
 
 
 def train_and_compare(
@@ -128,6 +160,7 @@ def train_and_compare(
             pred = label_encoder.inverse_transform(pred_raw.astype(int)) if use_encoded_target else pred_raw
             proba = pipe.predict_proba(x_test) if hasattr(pipe, "predict_proba") else None
             class_labels = label_encoder.classes_.tolist() if use_encoded_target else list(pipe.classes_)
+            feature_importance = _get_top_feature_importance(pipe)
             metrics = {
                 "model": name,
                 "cv_f1_macro_mean": float(cv_scores.mean()),
@@ -142,6 +175,7 @@ def train_and_compare(
             report[name] = {
                 "status": "ok",
                 "metrics": metrics,
+                "feature_importance": feature_importance,
                 "classification_report": classification_report(y_test, pred, output_dict=True),
                 "confusion_matrix": confusion_matrix(y_test, pred, labels=sorted(y.unique())).tolist(),
                 "labels": sorted(y.unique()),
