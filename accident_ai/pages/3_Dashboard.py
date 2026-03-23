@@ -453,7 +453,7 @@ with t4:
         color_style = st.session_state.get("dash_corr_color_style", "Soft")
         color_scale = "Blues" if color_style == "Soft" else "RdBu_r"
 
-        st.caption("Matrix values range from -1 to +1. Near +1: move together. Near -1: move opposite. Near 0: weak relation. This is association, not proof of cause.")
+        st.caption("Matrix values range from -1 to +1. A value near +1 means both items are often seen together in the selected records. A value near -1 means when one is seen more, the other is usually seen less. A value near 0 means there is little clear pattern between them. This shows a pattern in the data, not the reason crashes happen.")
         fig_corr = px.imshow(
             corr_display,
             text_auto=".2f",
@@ -512,15 +512,33 @@ with t4:
         if not sev_corr.empty:
             st.markdown("**Correlation Findings in Simple Words**")
             top_corr = sev_corr.head(3).copy()
+            target_name = friendly_factor_names.get(target_col, target_col)
             for _, row in top_corr.iterrows():
-                direction_text = "moves upward with" if row["correlation"] > 0 else "moves opposite to"
                 strength_text = str(row["impact_level"]).lower()
+                if row["correlation"] > 0:
+                    pattern_text = (
+                        f"In the selected records, **{row['factor']}** and **{target_name}** are often seen together. "
+                        f"When this factor appears more often, **{target_name}** also tends to appear more often."
+                    )
+                else:
+                    pattern_text = (
+                        f"In the selected records, **{row['factor']}** and **{target_name}** usually move in different directions. "
+                        f"When this factor appears more often, **{target_name}** tends to appear less often."
+                    )
+
+                if row["impact_level"] == "High":
+                    strength_sentence = "This is one of the clearer patterns in the filtered data."
+                elif row["impact_level"] == "Medium":
+                    strength_sentence = "This pattern is noticeable, but it is not one of the strongest ones."
+                else:
+                    strength_sentence = "This pattern is weak, so it should be treated as a small hint rather than a strong conclusion."
+
                 st.write(
-                    f"- **{row['factor']}** has a **{strength_text} relationship** with **{friendly_factor_names.get(target_col, target_col)}** "
-                    f"(correlation: **{row['correlation']:.3f}**). This means the factor generally **{direction_text}** the selected target in the filtered data."
+                    f"- **{row['factor']}** has a **{strength_text} relationship** with **{target_name}** "
+                    f"(correlation: **{row['correlation']:.3f}**). {pattern_text} {strength_sentence}"
                 )
             st.caption(
-                "Use this section to understand which factors are most connected with severity. A higher absolute correlation means a stronger relationship, but correlation alone does not prove the reason behind the crash."
+                "Read this section like a plain-language summary of the chart: it tells you which items are commonly seen together in the filtered data. A bigger number means a clearer pattern, but it still does not prove why the crash outcome happened."
             )
             with st.expander("Report-ready interpretation help", expanded=False):
                 st.markdown(

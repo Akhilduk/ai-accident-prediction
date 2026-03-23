@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from src.config import CLEANED_DATASET, LEADERBOARD_PATH, TRAINING_REPORT_JSON
 from src.ui import apply_theme
 
 apply_theme(
@@ -25,9 +26,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-DATA_PATH = Path("accident_ai/data/processed/active_cleaned.csv")
-LEADERBOARD_PATH = Path("accident_ai/reports/model_leaderboard.csv")
-TRAINING_JSON_PATH = Path("accident_ai/reports/training_report.json")
+DATA_PATH = CLEANED_DATASET
+TRAINING_JSON_PATH = TRAINING_REPORT_JSON
 
 
 def _safe_read_csv(path: Path) -> pd.DataFrame:
@@ -117,7 +117,7 @@ st.markdown(
   - Why used: strong gradient-boosted trees for classification performance.
 - **CatBoost (optional)**
   - Why used: robust boosting model for categorical-heavy data.
-  - Note: enabled only if installed and `ENABLE_CATBOOST=1` is set.
+  - Note: it is included automatically when the package is installed.
 
 ### Visualization and maps
 - **Plotly 5.24.1**
@@ -440,7 +440,7 @@ leaderboard_df = _safe_read_csv(LEADERBOARD_PATH)
 training_json = _safe_read_json(TRAINING_JSON_PATH)
 
 if current_df.empty:
-    st.info("Current cleaned dataset is not available, so live result interpretation cannot be generated.")
+    st.info("Current cleaned dataset could not be loaded right now, so live result interpretation cannot be generated. Please re-open the Data Manager page once and then return here.")
 else:
     current_df["serious_injury_flag"] = current_df["severity_target"].eq("Grievous").astype(int)
     total_records = len(current_df)
