@@ -22,6 +22,55 @@ df, _ = clean_data(load_excel_cached(str(active)))
 place_col = "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION"
 place_label = "Jurisdiction / Place"
 
+
+def _friendly_value_text(value):
+    text = str(value).strip()
+    mapping = {
+        "yes": "junction areas",
+        "no": "non-junction areas",
+        "day": "daylight hours",
+        "night": "night hours",
+        "straight": "straight roads",
+    }
+    lowered = text.lower()
+    if lowered in mapping:
+        return mapping[lowered]
+    return text.replace("_", " ")
+
+
+def _build_factor_sentence(factor_name: str, factor_value: str, target_name: str, chance: float) -> str:
+    readable_value = _friendly_value_text(factor_value)
+    factor_name_lower = factor_name.lower()
+
+    if factor_name_lower == "road geometry":
+        return f"On **{readable_value}**, the probability of **{target_name.lower()}** is about **{chance:.1f}%**."
+    if factor_name_lower == "day / night":
+        return f"During **{readable_value}**, the probability of **{target_name.lower()}** is about **{chance:.1f}%**."
+    if factor_name_lower == "junction":
+        return f"In **{readable_value}**, the probability of **{target_name.lower()}** is about **{chance:.1f}%**."
+    return (
+        f"For **{factor_name} = {readable_value}**, the probability of **{target_name.lower()}** "
+        f"is about **{chance:.1f}%**."
+    )
+
+
+def _build_factor_finding(factor_name: str, factor_value: str, target_name: str, chance: float) -> str:
+    readable_value = _friendly_value_text(factor_value)
+    target_label = target_name.lower()
+    if chance >= 75:
+        level = "very strong"
+    elif chance >= 60:
+        level = "strong"
+    elif chance >= 45:
+        level = "moderate"
+    else:
+        level = "limited"
+
+    return (
+        f"This suggests **{readable_value}** is a **{level} warning sign** for **{target_label}** in the current filtered data. "
+        f"It does not prove the factor directly causes the crash outcome, but it is one of the patterns most often seen with severe cases."
+    )
+
 with st.expander("How to Use This Dashboard (Simple)", expanded=False):
     st.markdown(
         """
@@ -460,6 +509,37 @@ with t4:
             use_container_width=True,
             hide_index=True,
         )
+        if not sev_corr.empty:
+            st.markdown("**Correlation Findings in Simple Words**")
+            top_corr = sev_corr.head(3).copy()
+            for _, row in top_corr.iterrows():
+                direction_text = "moves upward with" if row["correlation"] > 0 else "moves opposite to"
+                strength_text = str(row["impact_level"]).lower()
+                st.write(
+                    f"- **{row['factor']}** has a **{strength_text} relationship** with **{friendly_factor_names.get(target_col, target_col)}** "
+                    f"(correlation: **{row['correlation']:.3f}**). This means the factor generally **{direction_text}** the selected target in the filtered data."
+                )
+            st.caption(
+                "Use this section to understand which factors are most connected with severity. A higher absolute correlation means a stronger relationship, but correlation alone does not prove the reason behind the crash."
+            )
+            with st.expander("Report-ready interpretation help", expanded=False):
+                st.markdown(
+                    """
+**How to write the result in a report**
+- Start with the factor name.
+- Mention whether the relationship is low, medium, or high.
+- Explain the practical meaning in one simple sentence.
+- End with one action point.
+
+**Example format**
+- "Road geometry shows a meaningful relationship with severity. This suggests severe crashes are more common in some road shapes than others in the selected data. These locations should be checked for speed control, visibility, and lane discipline."
+
+**Important note**
+- Correlation shows which factors move with severity.
+- The severity analysis below shows where the severe outcome percentage is actually highest.
+- Use both together for stronger interpretation.
+"""
+                )
 
     st.markdown("---")
     st.markdown("#### Why Is Severity High? (Simple Explanation)")
@@ -548,7 +628,23 @@ with t4:
                 factor_name = str(row["factor"])
                 factor_value = str(row["factor_value"])
                 chance = float(row["target_rate"]) * 100
-                st.write(f"- In **{factor_name} = {factor_value}**, the chance of **{target_name}** is about **{chance:.1f}%**.")
+                st.write(f"- {_build_factor_sentence(factor_name, factor_value, target_name, chance)}")
+                st.caption(_build_factor_finding(factor_name, factor_value, target_name, chance))
+            most_affected_factors = top_drivers["factor"].dropna().astype(str).drop_duplicates().head(5).tolist()
+            if most_affected_factors:
+                st.markdown("**Overall Finding**")
+                st.write(
+                    f"The factors that appear to affect **{target_name.lower()}** the most in the current filtered data are: "
+                    f"**{', '.join(most_affected_factors)}**."
+                )
+                st.write(
+                    "In simple terms, these are the conditions where severe outcomes are seen more often than in other groups. "
+                    "This helps identify where road-safety action, inspection, or awareness should be focused first."
+                )
+                st.markdown("**Suggested Safety Action**")
+                st.write(
+                    "Focus first on the factor groups with the highest target rate and risk score. These are the groups where severe cases are both frequent and supported by enough records to deserve practical attention."
+                )
             st.caption("These are data-based associations. Use them as guidance with field inspection.")
             st.caption("Columns: target_rate = target_cases / total_records. risk_score = target_rate * sqrt(total_records) to balance rate and sample size.")
             st.dataframe(
