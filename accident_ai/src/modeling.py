@@ -98,15 +98,24 @@ def _get_top_feature_importance(pipe: Pipeline) -> list[dict[str, float | str]]:
         feature_names = feature_names[:min_len]
         importance = importance[:min_len]
 
-    total = float(importance.sum())
-    normalized = (importance / total * 100.0) if total > 0 else importance
-    fi = (
-        pd.DataFrame({"feature": feature_names, "importance": importance, "importance_pct": normalized})
-        .sort_values(["importance", "feature"], ascending=[False, True])
-        .head(TOP_FEATURES_TO_KEEP)
-    )
-    fi["feature"] = fi["feature"].str.replace("num__", "", regex=False).str.replace("cat__", "", regex=False)
-    return fi.to_dict(orient="records")
+    clean_features = [str(name).replace("num__", "").replace("cat__", "") for name in feature_names]
+    original_cols = [str(c) for c in getattr(preprocessor, "feature_names_in_", [])]
+
+    def _base_feature(name: str) -> str:
+        # Prefer exact or "<col>_<category>" matches against original input columns.
+        for col in sorted(original_cols, key=len, reverse=True):
+            if name == col or name.startswith(f"{col}_"):
+                return col
+        return name
+
+    fi = pd.DataFrame({"feature": clean_features, "importance": importance})
+    fi["feature"] = fi["feature"].map(_base_feature)
+    fi = fi.groupby("feature", as_index=False)["importance"].sum()
+    fi = fi.sort_values(["importance", "feature"], ascending=[False, True])
+
+    total = float(fi["importance"].sum())
+    fi["importance_pct"] = (fi["importance"] / total * 100.0) if total > 0 else 0.0
+    return fi.head(TOP_FEATURES_TO_KEEP).to_dict(orient="records")
 
 
 def train_and_compare(
@@ -172,13 +181,17 @@ def train_and_compare(
             }
             rows.append(metrics)
             trained[name] = {"pipeline": pipe, "y_test": y_test, "pred": pred, "proba": proba, "class_labels": class_labels}
+            labels_for_report = list(class_labels)
+            cm_counts = confusion_matrix(y_test, pred, labels=labels_for_report)
+            cm_row_pct = confusion_matrix(y_test, pred, labels=labels_for_report, normalize="true") * 100.0
             report[name] = {
                 "status": "ok",
                 "metrics": metrics,
                 "feature_importance": feature_importance,
                 "classification_report": classification_report(y_test, pred, output_dict=True),
-                "confusion_matrix": confusion_matrix(y_test, pred, labels=sorted(y.unique())).tolist(),
-                "labels": sorted(y.unique()),
+                "confusion_matrix": cm_counts.tolist(),
+                "confusion_matrix_row_pct": cm_row_pct.tolist(),
+                "labels": labels_for_report,
             }
             _progress(base + 0.80 / max(total_models, 1), f"[{idx}/{total_models}] {name}: completed.")
         except Exception as exc:
