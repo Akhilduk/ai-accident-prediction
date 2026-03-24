@@ -47,6 +47,15 @@ def plot_top_hotspots(df: pd.DataFrame):
     view["SEVERITY SCORE"] = (10 * view["FATAL"]) + (5 * view["GRIEVOUS"]) + (2 * view["MINOR"])
     view["severity_score"] = view["SEVERITY SCORE"]
 
+    normalized_name = lambda x: str(x).strip().lower()
+    average_score_col = next((c for c in view.columns if normalized_name(c) == "average score"), None)
+    if average_score_col is not None:
+        view["average_score"] = pd.to_numeric(view[average_score_col], errors="coerce")
+    else:
+        row_total = view["FATAL"] + view["GRIEVOUS"] + view["MINOR"]
+        safe_total = row_total.where(row_total > 0, 1)
+        view["average_score"] = view["SEVERITY SCORE"] / safe_total
+
     if "FIR NO" not in view.columns:
         view["FIR NO"] = 1
 
