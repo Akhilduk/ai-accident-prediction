@@ -80,6 +80,8 @@ with st.expander("Technical Words in Simple Language", expanded=False):
 - **Test Data**: Data not shown during training, used for quality checking.
 - **Cross Validation (5-fold)**: Repeating training/testing 5 times for stable quality.
 - **Confusion Matrix**: Table showing where predictions are correct and where they are mixed up.
+- **Feature Importance**: A score showing which input factors the model relied on more during prediction.
+- **Importance %**: Feature importance converted into percentage share across all model input features.
 - **Best Model**: The model with strongest balanced performance score (Macro-F1).
 """
     )
@@ -209,6 +211,10 @@ if st.button("Train All 3 Models", type="primary"):
 - **Columns = Predicted severity** by model.
 - Big numbers on the **diagonal** (top-left to bottom-right) are good: correct predictions.
 - Numbers outside diagonal are mistakes (for example, Fatal predicted as Serious Injury).
+- **TP (True Positive)** for a class: model correctly says that class.
+- **FP (False Positive)** for a class: model predicts that class, but actual is different.
+- **FN (False Negative)** for a class: actual is that class, but model predicted something else.
+- **TN (True Negative)** for a class: both actual and prediction are other classes.
 
 Use it to answer: **Which severity class is the model confusing most?**
 """
@@ -221,10 +227,18 @@ Use it to answer: **Which severity class is the model confusing most?**
         st.subheader(f"{model_name} Confusion Matrix")
         labels = [_to_user_label(x) for x in details["labels"]]
         cm = pd.DataFrame(details["confusion_matrix"], index=labels, columns=labels)
+        cm_pct_values = details.get("confusion_matrix_row_pct")
+        cm_pct = pd.DataFrame(cm_pct_values, index=labels, columns=labels) if cm_pct_values else pd.DataFrame()
         cm.index.name = "Actual"
         cm.columns.name = "Predicted"
         st.caption("Confusion matrix: rows are actual class, columns are predicted class. Diagonal cells are correct predictions.")
         st.plotly_chart(style_plotly(px.imshow(cm, text_auto=True, title=f"Confusion Matrix - {model_name}")), use_container_width=True)
+        if not cm_pct.empty:
+            st.caption("Row % matrix: each row totals ~100%. It shows, for each actual class, where predictions went.")
+            st.plotly_chart(
+                style_plotly(px.imshow(cm_pct.round(1), text_auto=".1f", title=f"Confusion Matrix Row % - {model_name}")),
+                use_container_width=True,
+            )
 
         m = details["metrics"]
         c1, c2 = st.columns(2)
@@ -247,11 +261,16 @@ Use it to answer: **Which severity class is the model confusing most?**
         if feature_importance:
             fi_df = pd.DataFrame(feature_importance)
             fi_df["feature"] = fi_df["feature"].map(_to_user_label).fillna(fi_df["feature"])
-            st.caption("Feature Importance (FI) score: larger values mean the model relied more on that input while making predictions.")
+            st.caption(
+                "Feature Importance (FI): larger score means the model relied more on that input while making predictions. "
+                "Importance % is the relative share across shown features."
+            )
             st.dataframe(
                 fi_df.style.format({"importance": "{:.4f}", "importance_pct": "{:.2f}%"}),
                 use_container_width=True,
             )
+            shown_total_pct = float(fi_df["importance_pct"].sum())
+            st.caption(f"Top shown features cover about {shown_total_pct:.1f}% of total model importance.")
             st.plotly_chart(
                 style_plotly(
                     px.bar(
@@ -263,6 +282,14 @@ Use it to answer: **Which severity class is the model confusing most?**
                     )
                 ),
                 use_container_width=True,
+            )
+            st.caption(
+                "How to interpret the Top Feature graph: longer bar = stronger influence on model decisions. "
+                "This does not prove a direct real-world cause; it only shows what the model used most in this dataset."
+            )
+            st.caption(
+                "Are all factors required for training? Not always. Some features contribute very little and can be removed after validation, "
+                "but keeping domain-important factors is usually safer unless performance remains stable after testing."
             )
 
 if TRAINING_REPORT_JSON.exists():
