@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 
@@ -47,15 +48,6 @@ def plot_top_hotspots(df: pd.DataFrame):
     view["SEVERITY SCORE"] = (10 * view["FATAL"]) + (5 * view["GRIEVOUS"]) + (2 * view["MINOR"])
     view["severity_score"] = view["SEVERITY SCORE"]
 
-    normalized_name = lambda x: str(x).strip().lower()
-    average_score_col = next((c for c in view.columns if normalized_name(c) == "average score"), None)
-    if average_score_col is not None:
-        view["average_score"] = pd.to_numeric(view[average_score_col], errors="coerce")
-    else:
-        row_total = view["FATAL"] + view["GRIEVOUS"] + view["MINOR"]
-        safe_total = row_total.where(row_total > 0, 1)
-        view["average_score"] = view["SEVERITY SCORE"] / safe_total
-
     if "FIR NO" not in view.columns:
         view["FIR NO"] = 1
 
@@ -64,7 +56,24 @@ def plot_top_hotspots(df: pd.DataFrame):
     safe_corridor_total = view["corridor_total_accidents"].where(view["corridor_total_accidents"] > 0, 1)
     # Row-wise average contribution requested by user:
     # average_score(row) = severity_score(row) / total accidents of that corridor
-    view["average_score_row"] = view["severity_score"] / safe_corridor_total
+    calculated_avg_row = view["severity_score"] / safe_corridor_total
+
+    # If an AVERAGE_SCORE-like column exists and matches the formula, use it.
+    def _normalize_avg_col_name(name: str) -> str:
+        return "".join(ch for ch in str(name).lower() if ch.isalnum())
+
+    average_score_src = next((c for c in view.columns if _normalize_avg_col_name(c) == "averagescore"), None)
+    if average_score_src is not None:
+        provided_avg_row = pd.to_numeric(view[average_score_src], errors="coerce")
+        valid = provided_avg_row.notna()
+        matches = np.isclose(provided_avg_row, calculated_avg_row, rtol=1e-4, atol=1e-4)
+        view["average_score_row"] = np.where(valid & matches, provided_avg_row, calculated_avg_row)
+        mismatch_count = int((valid & ~matches).sum())
+        provided_count = int(valid.sum())
+    else:
+        view["average_score_row"] = calculated_avg_row
+        mismatch_count = 0
+        provided_count = 0
 
     g = (
         view.groupby(place_col)
@@ -80,4 +89,8 @@ def plot_top_hotspots(df: pd.DataFrame):
     )
     g["fatal_rate"] = (g["fatal"] / g["total"]).fillna(0)
     g["average_score"] = g["average_score"].fillna(0)  # equals severity_score / total
-    return g.sort_values(["average_score", "severity_score", "total"], ascending=False).head(10)
+    out = g.sort_values(["average_score", "severity_score", "total"], ascending=False).head(10)
+    out.attrs["avg_score_source_column"] = average_score_src or "calculated"
+    out.attrs["avg_score_input_rows"] = provided_count
+    out.attrs["avg_score_mismatch_rows"] = mismatch_count
+    return out
