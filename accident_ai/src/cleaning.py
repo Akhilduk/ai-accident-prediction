@@ -13,6 +13,7 @@ SEVERITY_MAP = {"F": "Fatal", "M": "Minor", "G": "Grievous"}
 MIN_YEAR = 2000
 MAX_YEAR = pd.Timestamp.now().year + 1
 SEVERITY_SCORE_COL = "SEVERITY SCORE"
+PLACE_COL = "NO OF ACCIDENT REPORTED ON THIS CORRIDOR UNDER JURISDICTION"
 
 
 
@@ -257,6 +258,25 @@ def clean_data(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     grievous = pd.to_numeric(df["GRIEVOUS"], errors="coerce").fillna(0)
     minor = pd.to_numeric(df["MINOR"], errors="coerce").fillna(0)
     df[SEVERITY_SCORE_COL] = (10 * fatal) + (5 * grievous) + (2 * minor)
+    # Lowercase alias for downstream views/exports that expect snake-case naming.
+    df["severity_score"] = df[SEVERITY_SCORE_COL]
+
+    corridor_total = df.groupby(PLACE_COL, dropna=False, observed=False)["FIR NO"].transform("count").replace(0, 1)
+    df["AVERAGE_SCORE_CALCULATED"] = df["severity_score"] / corridor_total
+
+    def _normalize_avg_col_name(name: str) -> str:
+        return "".join(ch for ch in str(name).lower() if ch.isalnum())
+
+    average_score_src = next((c for c in df.columns if _normalize_avg_col_name(c) == "averagescore"), None)
+    if average_score_src is not None:
+        df["AVERAGE_SCORE_INPUT"] = pd.to_numeric(df[average_score_src], errors="coerce")
+    else:
+        df["AVERAGE_SCORE_INPUT"] = np.nan
+
+    valid_input = df["AVERAGE_SCORE_INPUT"].notna()
+    within_tolerance = np.isclose(df["AVERAGE_SCORE_INPUT"], df["AVERAGE_SCORE_CALCULATED"], rtol=1e-4, atol=1e-4)
+    df["AVERAGE_SCORE_VALID"] = (valid_input & within_tolerance).astype(int)
+    df["AVERAGE_SCORE"] = np.where(valid_input & within_tolerance, df["AVERAGE_SCORE_INPUT"], df["AVERAGE_SCORE_CALCULATED"])
 
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
