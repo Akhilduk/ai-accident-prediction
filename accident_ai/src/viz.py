@@ -35,7 +35,7 @@ def plot_top_hotspots(df: pd.DataFrame):
     view = df.copy()
 
     if place_col not in view.columns:
-        return pd.DataFrame(columns=[place_col, "total", "fatal", "grievous", "minor", "severity_score", "fatal_rate"])
+        return pd.DataFrame(columns=[place_col, "total", "fatal", "grievous", "minor", "severity_score", "average_score", "fatal_rate"])
 
     for col in ["FATAL", "GRIEVOUS", "MINOR"]:
         if col not in view.columns:
@@ -46,6 +46,15 @@ def plot_top_hotspots(df: pd.DataFrame):
         view["SEVERITY SCORE"] = (10 * view["FATAL"]) + (5 * view["GRIEVOUS"]) + (2 * view["MINOR"])
     else:
         view["SEVERITY SCORE"] = pd.to_numeric(view["SEVERITY SCORE"], errors="coerce").fillna(0)
+
+    normalized_name = lambda x: str(x).strip().lower()
+    average_score_col = next((c for c in view.columns if normalized_name(c) == "average score"), None)
+    if average_score_col is not None:
+        view["average_score"] = pd.to_numeric(view[average_score_col], errors="coerce")
+    else:
+        row_total = view["FATAL"] + view["GRIEVOUS"] + view["MINOR"]
+        safe_total = row_total.where(row_total > 0, 1)
+        view["average_score"] = view["SEVERITY SCORE"] / safe_total
 
     if "FIR NO" not in view.columns:
         view["FIR NO"] = 1
@@ -58,8 +67,10 @@ def plot_top_hotspots(df: pd.DataFrame):
             grievous=("GRIEVOUS", "sum"),
             minor=("MINOR", "sum"),
             severity_score=("SEVERITY SCORE", "sum"),
+            average_score=("average_score", "mean"),
         )
         .reset_index()
     )
     g["fatal_rate"] = (g["fatal"] / g["total"]).fillna(0)
-    return g.sort_values(["severity_score", "total"], ascending=False).head(10)
+    g["average_score"] = g["average_score"].fillna(0)
+    return g.sort_values(["average_score", "severity_score", "total"], ascending=False).head(10)
