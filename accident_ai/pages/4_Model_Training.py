@@ -81,7 +81,7 @@ with st.expander("Technical Words in Simple Language", expanded=False):
 - **Cross Validation (5-fold)**: Repeating training/testing 5 times for stable quality.
 - **Confusion Matrix**: Table showing where predictions are correct and where they are mixed up.
 - **Feature Importance**: A score showing which input factors the model relied on more during prediction.
-- **Importance %**: Feature importance converted into percentage share so all selected features add up to ~100%.
+- **Importance %**: Feature importance converted into percentage share across all model input features.
 - **Best Model**: The model with strongest balanced performance score (Macro-F1).
 """
     )
@@ -227,10 +227,18 @@ Use it to answer: **Which severity class is the model confusing most?**
         st.subheader(f"{model_name} Confusion Matrix")
         labels = [_to_user_label(x) for x in details["labels"]]
         cm = pd.DataFrame(details["confusion_matrix"], index=labels, columns=labels)
+        cm_pct_values = details.get("confusion_matrix_row_pct")
+        cm_pct = pd.DataFrame(cm_pct_values, index=labels, columns=labels) if cm_pct_values else pd.DataFrame()
         cm.index.name = "Actual"
         cm.columns.name = "Predicted"
         st.caption("Confusion matrix: rows are actual class, columns are predicted class. Diagonal cells are correct predictions.")
         st.plotly_chart(style_plotly(px.imshow(cm, text_auto=True, title=f"Confusion Matrix - {model_name}")), use_container_width=True)
+        if not cm_pct.empty:
+            st.caption("Row % matrix: each row totals ~100%. It shows, for each actual class, where predictions went.")
+            st.plotly_chart(
+                style_plotly(px.imshow(cm_pct.round(1), text_auto=".1f", title=f"Confusion Matrix Row % - {model_name}")),
+                use_container_width=True,
+            )
 
         m = details["metrics"]
         c1, c2 = st.columns(2)
@@ -261,6 +269,8 @@ Use it to answer: **Which severity class is the model confusing most?**
                 fi_df.style.format({"importance": "{:.4f}", "importance_pct": "{:.2f}%"}),
                 use_container_width=True,
             )
+            shown_total_pct = float(fi_df["importance_pct"].sum())
+            st.caption(f"Top shown features cover about {shown_total_pct:.1f}% of total model importance.")
             st.plotly_chart(
                 style_plotly(
                     px.bar(
