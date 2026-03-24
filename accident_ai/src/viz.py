@@ -42,10 +42,10 @@ def plot_top_hotspots(df: pd.DataFrame):
             view[col] = 0
         view[col] = pd.to_numeric(view[col], errors="coerce").fillna(0)
 
-    if "SEVERITY SCORE" not in view.columns:
-        view["SEVERITY SCORE"] = (10 * view["FATAL"]) + (5 * view["GRIEVOUS"]) + (2 * view["MINOR"])
-    else:
-        view["SEVERITY SCORE"] = pd.to_numeric(view["SEVERITY SCORE"], errors="coerce").fillna(0)
+    # Always calculate row-wise severity_score using required formula:
+    # severity_score = (10*FATAL) + (5*GRIEVOUS) + (2*MINOR)
+    view["SEVERITY SCORE"] = (10 * view["FATAL"]) + (5 * view["GRIEVOUS"]) + (2 * view["MINOR"])
+    view["severity_score"] = view["SEVERITY SCORE"]
 
     normalized_name = lambda x: str(x).strip().lower()
     average_score_col = next((c for c in view.columns if normalized_name(c) == "average score"), None)
@@ -59,6 +59,13 @@ def plot_top_hotspots(df: pd.DataFrame):
     if "FIR NO" not in view.columns:
         view["FIR NO"] = 1
 
+    # total accidents of corridor = number of records for each corridor in filtered data
+    view["corridor_total_accidents"] = view.groupby(place_col)["FIR NO"].transform("count")
+    safe_corridor_total = view["corridor_total_accidents"].where(view["corridor_total_accidents"] > 0, 1)
+    # Row-wise average contribution requested by user:
+    # average_score(row) = severity_score(row) / total accidents of that corridor
+    view["average_score_row"] = view["severity_score"] / safe_corridor_total
+
     g = (
         view.groupby(place_col)
         .agg(
@@ -66,11 +73,11 @@ def plot_top_hotspots(df: pd.DataFrame):
             fatal=("FATAL", "sum"),
             grievous=("GRIEVOUS", "sum"),
             minor=("MINOR", "sum"),
-            severity_score=("SEVERITY SCORE", "sum"),
-            average_score=("average_score", "mean"),
+            severity_score=("severity_score", "sum"),
+            average_score=("average_score_row", "sum"),
         )
         .reset_index()
     )
     g["fatal_rate"] = (g["fatal"] / g["total"]).fillna(0)
-    g["average_score"] = g["average_score"].fillna(0)
+    g["average_score"] = g["average_score"].fillna(0)  # equals severity_score / total
     return g.sort_values(["average_score", "severity_score", "total"], ascending=False).head(10)

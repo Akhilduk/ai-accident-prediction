@@ -257,6 +257,8 @@ def clean_data(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     grievous = pd.to_numeric(df["GRIEVOUS"], errors="coerce").fillna(0)
     minor = pd.to_numeric(df["MINOR"], errors="coerce").fillna(0)
     df[SEVERITY_SCORE_COL] = (10 * fatal) + (5 * grievous) + (2 * minor)
+    # Lowercase alias for downstream views/exports that expect snake-case naming.
+    df["severity_score"] = df[SEVERITY_SCORE_COL]
 
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
