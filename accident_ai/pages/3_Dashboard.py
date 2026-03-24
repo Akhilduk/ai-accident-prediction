@@ -429,7 +429,11 @@ with t2:
 with t3:
     st.markdown("#### Top 15 Hotspots (Filtered Data)")
     top_hotspots = plot_top_hotspots(f).head(15)
-    st.caption("Table is sorted by severity_score using (10×FATAL) + (5×GRIEVOUS) + (2×MINOR), then by total accidents. 'fatal_rate' is fatal / total.")
+    st.caption(
+        "Table is sorted by average_score first. If input Excel has `AVERAGE SCORE`/`average score`, that column is used; "
+        "otherwise average_score is calculated as severity_score / (FATAL+GRIEVOUS+MINOR). Then it is sorted by severity_score and total accidents. "
+        "'fatal_rate' is fatal / total."
+    )
     st.dataframe(top_hotspots.rename(columns={place_col: place_label}), use_container_width=True, height=420)
 
 with t4:
